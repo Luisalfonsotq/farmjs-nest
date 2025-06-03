@@ -4,12 +4,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './users/user.entity';
 import { config } from 'process';
 import { UsersModule } from './users/users.module'
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRootAsync({
-      imports: [ConfigModule],
+      imports: [ConfigModule, AuthModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         type: 'mysql',
@@ -24,6 +25,7 @@ import { UsersModule } from './users/users.module'
     }),
     UsersModule,
     TypeOrmModule.forFeature([User]),
+    AuthModule,
   ],
 })
 export class AppModule { }
