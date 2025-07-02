@@ -5,6 +5,8 @@ import { User } from './users/user.entity';
 import { config } from 'process';
 import { UsersModule } from './users/users.module'
 import { AuthModule } from './auth/auth.module';
+import { FincasModule } from './fincas/fincas.module';
+import { Finca } from './fincas/fincas.entity';
 
 @Module({
   imports: [
@@ -19,13 +21,14 @@ import { AuthModule } from './auth/auth.module';
         username: config.get<string>('DB_USERNAME', 'root'),
         password: config.get<string>('DB_PASSWORD', ''),
         database: config.get<string>('DB_NAME', 'farmjs_db'),
-        entities: [User],
+        entities: [User, Finca],
         synchronize: true, // cambia a false en producción
       }),
     }),
     UsersModule,
     TypeOrmModule.forFeature([User]),
     AuthModule,
+    FincasModule,
   ],
 })
 export class AppModule { }

@@ -20,7 +20,7 @@ export class UsersController {
         return this.usersService.findAll();
     }
 
-    // Ruta protegida slo por admin
+    // Ruta protegida solo por admin
     @Get('admin-only')
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Roles('admin')
