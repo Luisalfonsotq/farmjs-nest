@@ -1,34 +1,91 @@
+// src/app.module.ts
 import { Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { User } from './users/user.entity';
-import { config } from 'process';
-import { UsersModule } from './users/users.module'
+import { ConfigModule } from '@nestjs/config';
+
+// Importa tus módulos
+import { UsuarioModule } from './usuario/usuario.module';
+import { FincaModule } from './finca/finca.module';
 import { AuthModule } from './auth/auth.module';
-import { FincasModule } from './fincas/fincas.module';
-import { Finca } from './fincas/fincas.entity';
+import { PotreroModule } from './potrero/potrero.module';
+import { AnimalModule } from './animal/animal.module';
+import { ProveedorModule } from './proveedor/proveedor.module'; 
+import { TipoControlSanitarioModule } from './tipo-control-sanitario/tipo-control-sanitario.module';
+import { ControlSanitarioModule } from './control-sanitario/control-sanitario.module'; 
+import { ReproduccionModule } from './reproduccion/reproduccion.module'; 
+import { CriaModule } from './cria/cria.module'; 
+import { TipoEventoAnimalModule } from './tipo-evento-animal/tipo-evento-animal.module'; 
+import { EventoAnimalModule } from './evento-animal/evento-animal.module';
+
+// Importa entidades
+import { Usuario } from './usuario/entities/usuario.entity';
+import { Finca } from './finca/entities/finca.entity';
+import { UsuarioFinca } from './finca/entities/usuario-finca.entity';
+import { Potrero } from './potrero/entities/potrero.entity';
+import { Animal } from './animal/entities/animal.entity';
+import { Proveedor } from './proveedor/entities/proveedor.entity';
+import { TipoControlSanitario } from './tipo-control-sanitario/entities/tipo-control-sanitario.entity';
+import { ControlSanitario } from './control-sanitario/entities/control-sanitario.entity';
+import { Reproduccion } from './reproduccion/entities/reproduccion.entity';
+import { Cria } from './cria/entities/cria.entity';
+import { TipoEventoAnimal } from './tipo-evento-animal/entities/tipo-evento-animal.entity';
+import { EventoAnimal } from './evento-animal/entities/evento-animal.entity';
+
+
+// Función de ayuda para obtener variables de entorno
+function getEnv(key: string): string {
+  const value = process.env[key];
+  if (value === undefined) {
+    throw new Error(`Environment variable ${key} is not set.`);
+  }
+  return value;
+}
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
-    TypeOrmModule.forRootAsync({
-      imports: [ConfigModule, AuthModule],
-      inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'mysql',
-        host: config.get<string>('DB_HOST', 'localhost'),
-        port: parseInt(config.get<string>('DB_PORT', '3306')),
-        username: config.get<string>('DB_USERNAME', 'root'),
-        password: config.get<string>('DB_PASSWORD', ''),
-        database: config.get<string>('DB_NAME', 'farmjs_db'),
-        entities: [User, Finca],
-        synchronize: true, // cambia a false en producción
-      }),
+    ConfigModule.forRoot({
+      isGlobal: true,
+      envFilePath: '.env',
     }),
-    UsersModule,
-    TypeOrmModule.forFeature([User]),
+    TypeOrmModule.forRoot({
+      type: 'mysql',
+      host: getEnv('DATABASE_HOST'),
+      port: parseInt(getEnv('DATABASE_PORT') || '3306', 10),
+      username: getEnv('DATABASE_USER'),
+      password: getEnv('DATABASE_PASSWORD'),
+      database: getEnv('DATABASE_NAME'),
+      entities: [
+        Usuario,
+        Finca,
+        UsuarioFinca,
+        Potrero,
+        Animal,
+        Proveedor,
+        TipoControlSanitario,
+        ControlSanitario,
+        Reproduccion,
+        Cria,
+        TipoEventoAnimal,
+        EventoAnimal,
+      ],
+      // synchronize: process.env.NODE_ENV !== 'production',
+      logging: process.env.NODE_ENV !== 'production',
+      // softDelete: true, // Descomenta si habilitas soft delete globalmente
+    }),
     AuthModule,
-    FincasModule,
+    UsuarioModule,
+    FincaModule,
+    PotreroModule,
+    AnimalModule,
+    ProveedorModule,
+    TipoControlSanitarioModule,
+    ControlSanitarioModule, 
+    ReproduccionModule, 
+    CriaModule, 
+    TipoEventoAnimalModule,
+    EventoAnimalModule, 
   ],
+  controllers: [],
+  providers: [],
 })
-export class AppModule { }
+export class AppModule {}

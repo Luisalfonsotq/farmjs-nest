@@ -1,0 +1,41 @@
+// src/auth/strategies/jwt.strategy.ts
+import { ExtractJwt, Strategy } from 'passport-jwt';
+import { PassportStrategy } from '@nestjs/passport';
+import { Injectable, UnauthorizedException, InternalServerErrorException } from '@nestjs/common'; // Importa InternalServerErrorException
+import { ConfigService } from '@nestjs/config';
+import { UsuarioService } from '../../usuario/usuario.service';
+
+export interface JwtPayload {
+  sub: number;
+  email: string;
+  rol: string;
+}
+
+@Injectable()
+export class JwtStrategy extends PassportStrategy(Strategy) {
+  constructor(
+    private configService: ConfigService,
+    private usuarioService: UsuarioService,
+  ) {
+    const jwtSecret = configService.get<string>('JWT_SECRET');
+
+    // *** CAMBIO AQUÍ: Validamos explícitamente la variable de entorno ***
+    if (!jwtSecret) {
+      throw new InternalServerErrorException('JWT_SECRET environment variable is not defined.');
+    }
+
+    super({
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      ignoreExpiration: false,
+      secretOrKey: jwtSecret, // Ahora 'jwtSecret' es definitivamente un string
+    });
+  }
+
+  async validate(payload: JwtPayload) {
+    const user = await this.usuarioService.findOne(payload.sub);
+    if (!user) {
+      throw new UnauthorizedException('Usuario no encontrado o token inválido.');
+    }
+    return { userId: payload.sub, email: payload.email, rol: payload.rol, nombre: user.nombre };
+  }
+}
