@@ -1,7 +1,7 @@
 // src/animal/animal.service.ts
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DeepPartial } from 'typeorm'; // Import DeepPartial
+import { Repository, DeepPartial } from 'typeorm';
 import { Animal, SexoAnimal, EstadoAnimal } from './entities/animal.entity';
 import { CreateAnimalDto } from './dto/create-animal.dto';
 import { UpdateAnimalDto } from './dto/update-animal.dto';
@@ -37,43 +37,41 @@ export class AnimalService {
     }
 
     let potrero: Potrero | null = null;
-    if (potrero_id) { // potrero_id could be null, so check for truthiness
-      potrero = await this.potrero_repository.findOne({ where: { id: potrero_id } });
+    if (potrero_id) {
+      // 🐄 ⬅️ CORRECCIÓN CLAVE: Cargar la relación 'finca' del Potrero
+      potrero = await this.potrero_repository.findOne({
+        where: { id: potrero_id },
+        relations: ['finca'], // ¡Asegura que la relación 'finca' se cargue!
+      });
       if (!potrero) {
         throw new NotFoundException(`Potrero con ID ${potrero_id} no encontrado.`);
       }
+      // Ahora potrero.finca debería estar definido si el potrero existe
       if (potrero.finca.id !== finca.id) {
-        throw new BadRequestException(`El potrero con ID ${potrero_id} no pertenece a la finca con ID ${finca_id}.`);
+        throw new BadRequestException(`El potrero con ID ${potrero_id} no pertenece a la finca con ID ${finca.id}.`);
       }
     }
 
     let proveedor: Proveedor | null = null;
-    if (proveedor_id) { // proveedor_id could be null, so check for truthiness
+    if (proveedor_id) {
       proveedor = await this.proveedor_repository.findOne({ where: { id: proveedor_id } });
       if (!proveedor) {
         throw new NotFoundException(`Proveedor con ID ${proveedor_id} no encontrado.`);
       }
     }
 
-    // 🐄 ⬅️ CORRECCIÓN CLAVE: Asegúrate de que el objeto que pasas a .create()
-    // coincida con la definición de la entidad.
-    // proveedor_id y potrero_id ya son `number | null` del DTO,
-    // y las instancias `proveedor` y `potrero` son `Proveedor | null` o `Potrero | null`.
     const nuevo_animal: Animal = this.animal_repository.create({
       ...animal_data,
       finca,
-      finca_id,
+      // finca_id, // Si tu entidad Animal tiene una columna `finca_id` y una relación `finca` (ManyToOne), TypeORM manejará el ID automáticamente si le pasas el objeto `finca`. Puedes omitir `finca_id` aquí.
       potrero,
-      potrero_id,
+      // potrero_id, // Similar a finca_id, TypeORM puede manejarlo.
       proveedor,
-      proveedor_id,
+      // proveedor_id, // Similar a finca_id, TypeORM puede manejarlo.
       estado: animal_data.estado || EstadoAnimal.ACTIVO,
-    } as DeepPartial<Animal>); // 🪄 Añade una aserción de tipo si los errores persisten,
-                              // aunque con los DTOs y entidades correctos, no debería ser necesaria.
+    } as DeepPartial<Animal>);
 
-    // 🐄 ⬅️ CORRECCIÓN CLAVE: La inferencia del tipo de retorno de .save()
-    // Asegura que se retorne una sola entidad Animal, no un array.
-    return await this.animal_repository.save(nuevo_animal); // Añade `await` para consistencia
+    return await this.animal_repository.save(nuevo_animal);
   }
 
   async obtener_todos(): Promise<Animal[]> {
@@ -105,13 +103,18 @@ export class AnimalService {
     }
 
 
-    if (update_animal_dto.potrero_id !== undefined) { // Check if it's explicitly provided, even if null
+    if (update_animal_dto.potrero_id !== undefined) {
       if (update_animal_dto.potrero_id === null) {
         animal.potrero = null;
         animal.potrero_id = null;
-      } else if (update_animal_dto.potrero_id !== animal.potrero_id) { // Only update if ID changes
-        const nuevo_potrero = await this.potrero_repository.findOne({ where: { id: update_animal_dto.potrero_id } });
+      } else if (update_animal_dto.potrero_id !== animal.potrero_id) {
+        // 🐄 ⬅️ CORRECCIÓN CLAVE: Cargar la relación 'finca' del Potrero al actualizar
+        const nuevo_potrero = await this.potrero_repository.findOne({
+          where: { id: update_animal_dto.potrero_id },
+          relations: ['finca'], // ¡Asegura que la relación 'finca' se cargue!
+        });
         if (!nuevo_potrero) throw new NotFoundException(`Potrero con ID ${update_animal_dto.potrero_id} no encontrado.`);
+        // Ahora nuevo_potrero.finca debería estar definido
         if (nuevo_potrero.finca.id !== animal.finca.id) {
           throw new BadRequestException(`El potrero con ID ${update_animal_dto.potrero_id} no pertenece a la finca del animal.`);
         }
@@ -121,15 +124,11 @@ export class AnimalService {
     }
 
 
-    // 🐂 ⬅️ CORRECCIÓN CLAVE: Revisar la lógica de asignación para `proveedor_id`
-    if (update_animal_dto.proveedor_id !== undefined) { // Check if it's explicitly provided, even if null
+    if (update_animal_dto.proveedor_id !== undefined) {
       if (update_animal_dto.proveedor_id === null) {
         animal.proveedor = null;
-        animal.proveedor_id = null; // 🚀 ESTA LÍNEA ES LA QUE PROBABLEMENTE CAUSA EL ERROR 2322
-                                    // DEBIDO A LA INFERENCIA DE TIPO EN ALGUN CONTEXTO.
-                                    // Si la entidad y el DTO son `number | null`, debería funcionar.
-                                    // Si no, la aserción de tipo podría ayudar, pero es mejor corregir la fuente.
-      } else if (update_animal_dto.proveedor_id !== animal.proveedor_id) { // Only update if ID changes
+        animal.proveedor_id = null;
+      } else if (update_animal_dto.proveedor_id !== animal.proveedor_id) {
         const nuevo_proveedor = await this.proveedor_repository.findOne({ where: { id: update_animal_dto.proveedor_id } });
         if (!nuevo_proveedor) throw new NotFoundException(`Proveedor con ID ${update_animal_dto.proveedor_id} no encontrado.`);
         animal.proveedor = nuevo_proveedor;
@@ -147,7 +146,6 @@ export class AnimalService {
     }
 
     // Asignar el resto de las propiedades que no son relaciones ID
-    // Omitir los IDs de las relaciones ya que las manejamos manualmente
     const { finca_id: _, potrero_id: __, proveedor_id: ___, ...restOfUpdateDto } = update_animal_dto;
     Object.assign(animal, restOfUpdateDto);
 
@@ -162,28 +160,25 @@ export class AnimalService {
     }
   }
 
-  // Add these to src/animal/animal.service.ts
-// ... inside your AnimalService class ...
-
-async obtener_animales_por_finca(finca_id: number): Promise<Animal[]> {
+  async obtener_animales_por_finca(finca_id: number): Promise<Animal[]> {
     const finca = await this.finca_repository.findOne({ where: { id: finca_id } });
     if (!finca) {
         throw new NotFoundException(`Finca con ID ${finca_id} no encontrada.`);
     }
     return this.animal_repository.find({
         where: { finca: { id: finca_id } },
-        relations: ['potrero', 'proveedor'], // Puedes cargar otras relaciones si es necesario
+        relations: ['potrero', 'proveedor'],
     });
-}
+  }
 
-async obtener_animales_por_potrero(potrero_id: number): Promise<Animal[]> {
+  async obtener_animales_por_potrero(potrero_id: number): Promise<Animal[]> {
     const potrero = await this.potrero_repository.findOne({ where: { id: potrero_id } });
     if (!potrero) {
         throw new NotFoundException(`Potrero con ID ${potrero_id} no encontrado.`);
     }
     return this.animal_repository.find({
         where: { potrero: { id: potrero_id } },
-        relations: ['finca', 'proveedor'], // Puedes cargar otras relaciones si es necesario
+        relations: ['finca', 'proveedor'],
     });
-}
+  }
 }

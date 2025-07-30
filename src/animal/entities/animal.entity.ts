@@ -14,13 +14,17 @@ export enum SexoAnimal {
 }
 
 export enum EstadoAnimal {
-  ACTIVO = 'Activo',
-  VENDIDO = 'Vendido',
-  MUERTO = 'Muerto',
-  BAJA = 'Baja',
+  ACTIVO = 'Activo',        // Animal sano en el hato
+  ENFERMO = 'Enfermo',      // Animal con alguna enfermedad
+  EN_TRATAMIENTO = 'En Tratamiento', // Animal recibiendo medicación o cuidado
+  AISLADO = 'Aislado',      // Animal separado del rebaño
+  GESTACION = 'Gestación',  // Para hembras preñadas
+  VENDIDO = 'Vendido',      // Animal ha sido vendido
+  MUERTO = 'Muerto',        // Animal ha fallecido
+  DESCARTADO = 'Descartado',// Animal retirado del hato por improductividad u otras razones
 }
 
-@Entity('Animal')
+@Entity('Animales')
 export class Animal {
   @PrimaryGeneratedColumn()
   id: number;
@@ -78,9 +82,8 @@ export class Animal {
   @JoinColumn({ name: 'proveedor_id' })
   proveedor: Proveedor | null;
 
-  // 🐂 ⬅️ CONFIRMAR ESTO: Asegúrate de que proveedor_id es 'number | null'
   @Column({ name: 'proveedor_id', nullable: true })
-  proveedor_id: number | null; // <-- DEBE SER number | null
+  proveedor_id: number | null;
 
   @OneToMany(() => ControlSanitario, control_sanitario => control_sanitario.animal)
   controles_sanitarios: ControlSanitario[];

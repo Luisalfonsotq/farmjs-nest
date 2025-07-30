@@ -1,44 +1,35 @@
 // src/reproduccion/dto/create-reproduccion.dto.ts
-import { IsDateString, IsNotEmpty, IsNumber, IsOptional, IsString, IsEnum, Min } from 'class-validator';
-
-enum TipoMonta {
-  NATURAL = 'Natural',
-  INSEMINACION = 'Inseminacion',
-}
+import { IsNotEmpty, IsNumber, IsDateString, IsOptional, IsString, IsBoolean, IsEnum } from 'class-validator';
+import { TipoMonta } from '../entities/reproduccion.entity'; // Importa TipoMonta
 
 export class CreateReproduccionDto {
   @IsNotEmpty()
   @IsNumber()
-  animal_id: number; // ID de la madre
-
-  @IsOptional()
-  @IsDateString()
-  fecha_celo?: Date;
-
-  @IsOptional()
-  @IsDateString()
-  fecha_monta?: Date;
-
-  @IsOptional()
-  @IsEnum(TipoMonta)
-  tipo_monta?: TipoMonta;
+  madre_id: number; // 🐮 ⬅️ CAMBIO: de animal_id a madre_id
 
   @IsOptional()
   @IsNumber()
-  toro_id?: number; // ID del padre
+  padre_id?: number | null; // 🐮 ⬅️ CAMBIO: de toro_id a padre_id
+
+  @IsNotEmpty()
+  @IsDateString()
+  fecha_monta_ia: Date; // 🐮 ⬅️ Propiedad actualizada
+
+  @IsOptional()
+  @IsEnum(TipoMonta)
+  tipo_monta?: TipoMonta | null;
 
   @IsOptional()
   @IsDateString()
-  fecha_confirmacion_prenez?: Date;
+  fecha_diagnostico_gestacion?: Date; // 🐮 ⬅️ Propiedad nueva
+
+  @IsOptional()
+  @IsBoolean()
+  resultado_gestacion?: boolean; // 🐮 ⬅️ Propiedad nueva
 
   @IsOptional()
   @IsDateString()
   fecha_parto?: Date;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  crias_nacidas?: number;
 
   @IsOptional()
   @IsString()

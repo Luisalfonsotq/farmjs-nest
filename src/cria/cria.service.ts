@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Cria } from './entities/cria.entity';
 import { Animal, SexoAnimal } from '../animal/entities/animal.entity'; // Importa SexoAnimal para validación
-import { CreateCriaDto } from './dto/create-cria.dto';
+import { CreateCriaDto } from './dto/create-cria.dto'; // Asegúrate que este DTO ya no exija fecha_nacimiento
 import { UpdateCriaDto } from './dto/update-cria.dto';
 
 @Injectable()
@@ -17,39 +17,38 @@ export class CriaService {
   ) {}
 
   async crear(create_dto: CreateCriaDto): Promise<Cria> {
-    const { animal_id, madre_id, padre_id, fecha_nacimiento } = create_dto;
+    // La fecha_nacimiento ahora pertenece a la entidad Animal, no a Cria.
+    const { animal_id, madre_id, padre_id } = create_dto;
 
     const cria_animal = await this.animal_repository.findOne({ where: { id: animal_id } });
     if (!cria_animal) {
       throw new NotFoundException(`Animal (cría) con ID ${animal_id} no encontrado.`);
     }
 
-    const existe_cria_registrada = await this.cria_repository.findOne({ where: { animal_id } });
+    // Verificamos que el animal a registrar como cría ya existe
+    const existe_cria_registrada = await this.cria_repository.findOne({ where: { cria_animal: { id: animal_id } } });
     if (existe_cria_registrada) {
       throw new ConflictException(`El animal con ID ${animal_id} ya está registrado como una cría.`);
     }
 
     const madre_animal = await this.animal_repository.findOne({ where: { id: madre_id } });
-    if (!madre_animal || madre_animal.sexo !== SexoAnimal.HEMBRA) { // Usar enum
+    if (!madre_animal || madre_animal.sexo !== SexoAnimal.HEMBRA) {
       throw new BadRequestException(`Animal (madre) con ID ${madre_id} no encontrado o no es hembra.`);
     }
 
     let padre_animal: Animal | null = null;
     if (padre_id) {
       padre_animal = await this.animal_repository.findOne({ where: { id: padre_id } });
-      if (!padre_animal || padre_animal.sexo !== SexoAnimal.MACHO) { // Usar enum
+      if (!padre_animal || padre_animal.sexo !== SexoAnimal.MACHO) {
         throw new BadRequestException(`Animal (padre) con ID ${padre_id} no encontrado o no es macho.`);
       }
     }
 
+    // Creamos la cría usando las relaciones, sin los _id ni fecha_nacimiento
     const nueva_cria = this.cria_repository.create({
       cria_animal,
-      animal_id,
       madre: madre_animal,
-      madre_id,
-      padre: padre_animal, // <-- CAMBIO: padre_animal puede ser null
-      padre_id,           // <-- CAMBIO: padre_id puede ser null
-      fecha_nacimiento,
+      padre: padre_animal,
     });
     return this.cria_repository.save(nueva_cria);
   }

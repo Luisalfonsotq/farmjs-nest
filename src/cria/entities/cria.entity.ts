@@ -2,7 +2,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToOne } from 'typeorm';
 import { Animal } from '../../animal/entities/animal.entity';
 
-@Entity('Cria')
+@Entity('crias')
 export class Cria {
   @PrimaryGeneratedColumn()
   id: number;

@@ -7,7 +7,7 @@ import { CreateControlSanitarioDto } from './dto/create-control-sanitario.dto';
 import { UpdateControlSanitarioDto } from './dto/update-control-sanitario.dto';
 import { Animal } from '../animal/entities/animal.entity';
 import { TipoControlSanitario } from '../tipo-control-sanitario/entities/tipo-control-sanitario.entity';
-import { Usuario } from '../usuario/entities/usuario.entity';
+import { Usuario, RolUsuario } from '../usuario/entities/usuario.entity'; // 🐮 ¡IMPORTA RolUsuario!
 
 @Injectable()
 export class ControlSanitarioService {
@@ -35,19 +35,33 @@ export class ControlSanitarioService {
       throw new NotFoundException(`Tipo de control sanitario con ID ${tipo_control_id} no encontrado.`);
     }
 
-    const veterinario = await this.usuario_repository.findOne({ where: { id: veterinario_id } });
-    if (!veterinario || veterinario.rol !== 'veterinario') {
-      throw new BadRequestException(`Usuario con ID ${veterinario_id} no encontrado o no tiene rol de veterinario.`);
+    let veterinario: Usuario | null = null;
+    // 🐮 ⬅️ CORRECCIÓN 1: Manejar veterinario_id que puede ser null o undefined
+    if (veterinario_id !== null && veterinario_id !== undefined) {
+      veterinario = await this.usuario_repository.findOne({ where: { id: veterinario_id } });
+      if (!veterinario) {
+        throw new NotFoundException(`Usuario con ID ${veterinario_id} no encontrado.`);
+      }
+      // 🐮 ⬅️ CORRECCIÓN 2: Comparar con el enum RolUsuario
+      if (veterinario.rol !== RolUsuario.VETERINARIO) {
+        throw new BadRequestException(`Usuario con ID ${veterinario_id} no tiene rol de veterinario.`);
+      }
+    } else {
+      // Si veterinario_id es null/undefined y es obligatorio para el control, lanza un error
+      // O permite que sea null si tu lógica de negocio lo permite
+      // Por ahora, si es null/undefined, simplemente no se asigna un veterinario.
     }
 
     // Validaciones adicionales basadas en tipo_control
-    if (tipo_control.aplica_a_sexo && tipo_control.aplica_a_sexo === (animal.sexo === 'Hembra')) {
-        // Ejemplo: Si aplica a sexo pero el animal no coincide. Ajustar lógica según necesidad.
-        // Podrías tener una lógica más específica aquí, por ejemplo si es castración y el animal es hembra.
+    if (tipo_control.aplica_a_sexo && animal.sexo === 'Hembra') { // Ejemplo de lógica, revisar si es la intención
+        // Si aplica a sexo y el animal es hembra, podría haber una validación específica aquí.
+        // La comparación `tipo_control.aplica_a_sexo === (animal.sexo === 'Hembra')` es válida,
+        // pero la lógica de negocio puede necesitar más detalle.
     }
 
-    if (tipo_control.requiere_medicamento && !control_data.medicamento) {
-      throw new BadRequestException(`Este tipo de control sanitario requiere un medicamento.`);
+    // 🐮 ⬅️ CORRECCIÓN 3: Usar 'medicamento_dosis' en lugar de 'medicamento'
+    if (tipo_control.requiere_medicamento && (!control_data.medicamento_dosis || control_data.medicamento_dosis.trim() === '')) {
+      throw new BadRequestException(`Este tipo de control sanitario requiere un medicamento y dosis.`);
     }
 
 
@@ -57,8 +71,8 @@ export class ControlSanitarioService {
       animal_id,
       tipo_control,
       tipo_control_id,
-      veterinario,
-      veterinario_id,
+      veterinario, // Puede ser null
+      veterinario_id, // Puede ser null
     });
     return this.control_sanitario_repository.save(nuevo_control);
   }
@@ -84,25 +98,36 @@ export class ControlSanitarioService {
     const control = await this.obtener_por_id(id);
 
     // Lógica para actualizar relaciones si los IDs cambian
-    if (update_dto.animal_id && update_dto.animal_id !== control.animal_id) {
+    if (update_dto.animal_id !== undefined && update_dto.animal_id !== control.animal_id) {
       const new_animal = await this.animal_repository.findOne({ where: { id: update_dto.animal_id } });
       if (!new_animal) throw new NotFoundException(`Animal con ID ${update_dto.animal_id} no encontrado.`);
       control.animal = new_animal;
       control.animal_id = new_animal.id;
     }
-    if (update_dto.tipo_control_id && update_dto.tipo_control_id !== control.tipo_control_id) {
+    if (update_dto.tipo_control_id !== undefined && update_dto.tipo_control_id !== control.tipo_control_id) {
       const new_tipo_control = await this.tipo_control_repository.findOne({ where: { id: update_dto.tipo_control_id } });
       if (!new_tipo_control) throw new NotFoundException(`Tipo de control con ID ${update_dto.tipo_control_id} no encontrado.`);
       control.tipo_control = new_tipo_control;
       control.tipo_control_id = new_tipo_control.id;
     }
-    if (update_dto.veterinario_id && update_dto.veterinario_id !== control.veterinario_id) {
-      const new_veterinario = await this.usuario_repository.findOne({ where: { id: update_dto.veterinario_id } });
-      if (!new_veterinario || new_veterinario.rol !== 'veterinario') {
-        throw new BadRequestException(`Usuario con ID ${update_dto.veterinario_id} no encontrado o no tiene rol de veterinario.`);
+
+    // 🐮 ⬅️ CORRECCIÓN 1 y 2 (en actualizar): Manejar veterinario_id que puede ser null/undefined y comparar con enum
+    if (update_dto.veterinario_id !== undefined) {
+      if (update_dto.veterinario_id === null) {
+        control.veterinario = null;
+        control.veterinario_id = null;
+      } else if (update_dto.veterinario_id !== control.veterinario_id) {
+        const new_veterinario = await this.usuario_repository.findOne({ where: { id: update_dto.veterinario_id } });
+        if (!new_veterinario) {
+          throw new NotFoundException(`Usuario con ID ${update_dto.veterinario_id} no encontrado.`);
+        }
+        // 🐮 ⬅️ CORRECCIÓN 2 (en actualizar): Comparar con el enum RolUsuario
+        if (new_veterinario.rol !== RolUsuario.VETERINARIO) {
+          throw new BadRequestException(`Usuario con ID ${update_dto.veterinario_id} no tiene rol de veterinario.`);
+        }
+        control.veterinario = new_veterinario;
+        control.veterinario_id = new_veterinario.id;
       }
-      control.veterinario = new_veterinario;
-      control.veterinario_id = new_veterinario.id;
     }
 
     Object.assign(control, update_dto);

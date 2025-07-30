@@ -2,7 +2,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { Animal } from '../../animal/entities/animal.entity';
 
-@Entity('Proveedor')
+@Entity('Proveedores')
 export class Proveedor {
   @PrimaryGeneratedColumn()
   id: number;

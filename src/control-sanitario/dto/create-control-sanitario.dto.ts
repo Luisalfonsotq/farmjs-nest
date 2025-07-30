@@ -1,5 +1,6 @@
 // src/control-sanitario/dto/create-control-sanitario.dto.ts
-import { IsDateString, IsNotEmpty, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsDateString, IsOptional, IsString, IsEnum } from 'class-validator';
+import { TipoTratamiento, TipoEnfermedad } from '../entities/control-sanitario.entity';
 
 export class CreateControlSanitarioDto {
   @IsNotEmpty()
@@ -10,33 +11,28 @@ export class CreateControlSanitarioDto {
   @IsNumber()
   tipo_control_id: number;
 
-  @IsNotEmpty()
+  // 🐮 ¡AÑADE EL ID DEL VETERINARIO (USUARIO)!
+  @IsOptional() // Podría ser opcional si el usuario que registra el control es el veterinario loggeado
   @IsNumber()
-  veterinario_id: number;
+  veterinario_id?: number | null; // El ID del usuario que actúa como veterinario
 
   @IsNotEmpty()
   @IsDateString()
-  fecha: Date;
+  fecha_control: Date;
+
+  @IsOptional()
+  @IsEnum(TipoTratamiento)
+  tipo_tratamiento?: TipoTratamiento | null;
+
+  @IsOptional()
+  @IsEnum(TipoEnfermedad)
+  tipo_enfermedad?: TipoEnfermedad | null;
 
   @IsOptional()
   @IsString()
-  medicamento?: string;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  dosis?: number;
-
-  @IsOptional()
-  @IsString()
-  via_aplicacion?: string;
+  medicamento_dosis?: string;
 
   @IsOptional()
   @IsString()
   observaciones?: string;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(0)
-  costo?: number;
 }

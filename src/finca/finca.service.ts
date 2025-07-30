@@ -7,8 +7,7 @@ import { UsuarioFinca } from './entities/usuario-finca.entity';
 import { CreateFincaDto } from './dto/create-finca.dto';
 import { UpdateFincaDto } from './dto/update-finca.dto';
 import { AssignFincaDto } from './dto/assign-finca.dto';
-import { Usuario } from 'src/usuario/entities/usuario.entity';
-
+import { Usuario, RolUsuario } from '../usuario/entities/usuario.entity';
 
 @Injectable()
 export class FincaService {
@@ -17,7 +16,7 @@ export class FincaService {
     private fincaRepository: Repository<Finca>,
     @InjectRepository(UsuarioFinca)
     private usuarioFincaRepository: Repository<UsuarioFinca>,
-    @InjectRepository(Usuario) //Para validar el propietario
+    @InjectRepository(Usuario) // Para validar el propietario
     private usuarioRepository: Repository<Usuario>,
   ) { }
 
@@ -26,12 +25,12 @@ export class FincaService {
 
     const propietario = await this.usuarioRepository.findOne({ where: { id: propietario_id } });
     if (!propietario) {
-      throw new NotFoundException(`Usuario con ID ${propietario_id} no encontrado`)
+      throw new NotFoundException(`Usuario con ID ${propietario_id} no encontrado`);
     }
 
-    // Validar que el rol del propietario sea 'administrador' o 'propietario'
-    if (propietario.rol !== 'administrador' && propietario.rol !== 'propietario') {
-      throw new BadRequestException('El usuario asignado como propietario no tiene el rol permitido');
+    // 🐮 ⬅️ CORRECCIÓN CLAVE AQUÍ: Solo el rol ADMINISTRADOR puede crear fincas.
+    if (propietario.rol !== RolUsuario.ADMINISTRADOR) {
+      throw new BadRequestException('Solo un usuario con rol de Administrador puede ser propietario de una nueva finca.');
     }
 
     const newfinca = this.fincaRepository.create({
@@ -80,10 +79,12 @@ export class FincaService {
     if (!finca) {
       throw new NotFoundException(`Finca con ID ${fincaId} no encontrada.`);
     }
-  
-  // Validar que el usuario tenga un rol que le permita gestionar fincas
-    if (user.rol !== 'administrador' && user.rol !== 'supervisor') {
-    throw new BadRequestException('El usuario no tiene el rol adecuado para gestionar fincas.');
+
+    // Aquí, la lógica para asignar un usuario a una finca (capataz) parece correcta
+    // ya que mencionas que el Supervisor puede hacerse cargo de labores de capataz.
+    // Esto significa que Administrador y Supervisor pueden ser asignados a fincas.
+    if (user.rol !== RolUsuario.ADMINISTRADOR && user.rol !== RolUsuario.SUPERVISOR) {
+      throw new BadRequestException('El usuario no tiene el rol adecuado para gestionar fincas (solo Administrador o Supervisor).');
     }
 
     const existingAssignment = await this.usuarioFincaRepository.findOne({
@@ -105,7 +106,6 @@ export class FincaService {
     }
   }
 
-  // Método para obtener fincas gestionadas por un usuario
   async getFincasManagedByUser(userId: number): Promise<Finca[]> {
     const userFincas = await this.usuarioFincaRepository.find({
       where: { usuarioId: userId },

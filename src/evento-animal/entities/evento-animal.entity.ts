@@ -4,7 +4,7 @@ import { Animal } from '../../animal/entities/animal.entity';
 import { TipoEventoAnimal } from '../../tipo-evento-animal/entities/tipo-evento-animal.entity';
 import { Potrero } from '../../potrero/entities/potrero.entity';
 
-@Entity('EventoAnimal')
+@Entity('EventosAnimales')
 export class EventoAnimal {
   @PrimaryGeneratedColumn()
   id: number;

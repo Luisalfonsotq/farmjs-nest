@@ -1,6 +1,6 @@
 // src/animal/dto/create-animal.dto.ts
 import { IsString, IsNotEmpty, IsEnum, IsNumber, IsOptional, IsDateString, Min } from 'class-validator';
-import { SexoAnimal, EstadoAnimal } from '../entities/animal.entity'; // Importar los enums
+import { SexoAnimal, EstadoAnimal } from '../entities/animal.entity'; 
 
 export class CreateAnimalDto {
   @IsNotEmpty()
@@ -12,7 +12,7 @@ export class CreateAnimalDto {
   nombre?: string;
 
   @IsNotEmpty()
-  @IsEnum(SexoAnimal) // Validar que sea uno de los valores del enum SexoAnimal
+  @IsEnum(SexoAnimal)
   sexo: SexoAnimal;
 
   @IsOptional()
@@ -42,8 +42,8 @@ export class CreateAnimalDto {
   fecha_adquisicion?: Date;
 
   @IsOptional()
-  @IsEnum(EstadoAnimal) // Validar que sea uno de los valores del enum EstadoAnimal
-  estado?: EstadoAnimal;
+  @IsEnum(EstadoAnimal)
+  estado?: EstadoAnimal; // Tipo sigue siendo EstadoAnimal
 
   @IsOptional()
   @IsString()
@@ -55,9 +55,9 @@ export class CreateAnimalDto {
 
   @IsOptional()
   @IsNumber()
-  potrero_id?: number; // Opcional, por si se puede crear sin potrero
+  potrero_id?: number;
 
   @IsOptional()
   @IsNumber()
-  proveedor_id?: number | null; // Opcional
+  proveedor_id?: number | null;
 }

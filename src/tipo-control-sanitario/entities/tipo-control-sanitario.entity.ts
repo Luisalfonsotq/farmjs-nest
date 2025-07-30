@@ -2,7 +2,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
 import { ControlSanitario } from '../../control-sanitario/entities/control-sanitario.entity'; 
 
-@Entity('TipoControlSanitario')
+@Entity('TiposControlesSanitarios')
 export class TipoControlSanitario {
   @PrimaryGeneratedColumn()
   id: number;
