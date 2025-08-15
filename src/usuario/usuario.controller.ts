@@ -1,19 +1,30 @@
 // src/usuario/usuario.controller.ts
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseInterceptors, ClassSerializerInterceptor } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, Request } from '@nestjs/common';
 import { UsuarioService } from './usuario.service';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
+import {RolUsuario} from './entities/usuario.entity'
 
-@UseInterceptors(ClassSerializerInterceptor) // <-- Añade este decorador aquí
+
 @Controller('usuarios')
 export class UsuarioController {
   constructor(private readonly usuarioService: UsuarioService) {}
 
-  @Post()
-  create(@Body() createUsuarioDto: CreateUsuarioDto) {
-    return this.usuarioService.create(createUsuarioDto);
+  // Registro público - sin token o rol forzado a Colaborador
+  @Post('registro')
+  async register(@Body() createUsuarioDto: CreateUsuarioDto){
+    return this.usuarioService.create({
+      ...createUsuarioDto,
+      rol: RolUsuario.COLABORADOR, // Forzamos este rol
+    });
   }
 
+  // Creación del administrador, posteriormente se pondrá un guardia para protegerlo
+  @Post()
+  async createByAdmin(@Body() createUsuarioDto: CreateUsuarioDto, @Request() req) {
+    return this.usuarioService.create(createUsuarioDto, req.user);
+  }
+  // Listar a los usuarios
   @Get()
   findAll() {
     return this.usuarioService.findAll();

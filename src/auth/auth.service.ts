@@ -3,7 +3,7 @@ import { Injectable, UnauthorizedException, BadRequestException, ConflictExcepti
 import { UsuarioService } from '../usuario/usuario.service';
 import { JwtService } from '@nestjs/jwt';
 import { LoginUsuarioDto } from '../usuario/dto/login-usuario.dto';
-import { CreateUsuarioDto } from '../usuario/dto/create-usuario.dto'; // Importa tu DTO existente
+import { CreateUsuarioDto } from '../usuario/dto/create-usuario.dto';
 
 @Injectable()
 export class AuthService {
@@ -13,7 +13,7 @@ export class AuthService {
   ) {}
 
   async validateUser(email: string, password: string): Promise<any> {
-    const usuario = await this.usuarioService.findByEmail(email); // findByEmail debe seleccionar la contraseña
+    const usuario = await this.usuarioService.findByEmail(email);
     if (!usuario) {
       return null;
     }
@@ -24,7 +24,6 @@ export class AuthService {
     }
 
     // Si todo es válido, retorna el usuario sin la contraseña
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password: _, ...result } = usuario;
     return result;
   }
@@ -49,11 +48,8 @@ export class AuthService {
   }
 
   // Función de registro
-  async register(createUsuarioDto: CreateUsuarioDto) { // Usa tu CreateUsuarioDto existente
+  async register(createUsuarioDto: CreateUsuarioDto) { 
     try {
-      // El servicio de usuario debe manejar la creación, el hasheo de la contraseña
-      // y la verificación de duplicados de email.
-      // Aquí simplemente pasamos todo el DTO, incluyendo 'nombre' y 'rol' si vienen.
       const newUser = await this.usuarioService.create(createUsuarioDto); 
 
       // Si el registro es exitoso, inicia sesión al nuevo usuario
@@ -64,11 +60,11 @@ export class AuthService {
       
       return this.login(loginDtoForNewUser);
     } catch (error) {
-      // Asumiendo que usuarioService.create lanza un ConflictException para emails duplicados
+      // ConflictException para emails duplicados
       if (error instanceof ConflictException) { 
         throw new BadRequestException('El email ya está registrado.');
       }
-      throw error; // Re-lanza otros errores
+      throw error;
     }
   }
 }
