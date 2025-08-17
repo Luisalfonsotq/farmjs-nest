@@ -6,7 +6,7 @@ import { UsuarioFinca } from '../../finca/entities/usuario-finca.entity'; // Ase
 import { Exclude } from 'class-transformer';
 import { ControlSanitario } from '../../control-sanitario/entities/control-sanitario.entity'; // Asegúrate de que la ruta sea correcta
 
-// 🐮 ⬅️ ENUM DE ROLES DE USUARIO
+// ENUM DE ROLES DE USUARIO
 export enum RolUsuario {
   ADMINISTRADOR = 'Administrador',
   SUPERVISOR = 'Supervisor',

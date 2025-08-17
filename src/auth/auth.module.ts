@@ -2,18 +2,18 @@
 import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
-import { UsuarioModule } from '../usuario/usuario.module'; // Importa UsuarioModule para usar UsuarioService
+import { UsuarioModule } from '../usuario/usuario.module'; 
 import { PassportModule } from '@nestjs/passport';
 import { JwtModule } from '@nestjs/jwt';
 import { JwtStrategy } from './strategies/jwt.strategy';
-import { ConfigModule, ConfigService } from '@nestjs/config'; // Para acceder a las variables de entorno
+import { ConfigModule, ConfigService } from '@nestjs/config'; 
 
 @Module({
   imports: [
-    UsuarioModule, // Necesitamos el UsuarioService para validar credenciales
+    UsuarioModule, // Para validar sús credenciales
     PassportModule,
     JwtModule.registerAsync({
-      imports: [ConfigModule], // Importa ConfigModule para usar ConfigService
+      imports: [ConfigModule], 
       useFactory: async (configService: ConfigService) => ({
         secret: configService.get<string>('JWT_SECRET'), // Obtiene el secreto de las variables de entorno
         signOptions: { expiresIn: '1h' }, // El token expira en 1 hora
@@ -22,7 +22,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config'; // Para acceder a 
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy], // JwtStrategy necesita ser un provider
+  providers: [AuthService, JwtStrategy], 
   exports: [AuthService], // Exportamos AuthService si otros módulos necesitan usarlo (ej. para verificar tokens internamente)
 })
 export class AuthModule {}

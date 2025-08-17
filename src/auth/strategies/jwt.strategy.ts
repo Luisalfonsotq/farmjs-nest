@@ -1,9 +1,10 @@
 // src/auth/strategies/jwt.strategy.ts
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable, UnauthorizedException, InternalServerErrorException } from '@nestjs/common'; // Importa InternalServerErrorException
+import { Injectable, UnauthorizedException, InternalServerErrorException } from '@nestjs/common'; 
 import { ConfigService } from '@nestjs/config';
 import { UsuarioService } from '../../usuario/usuario.service';
+import {Request} from 'express';
 
 export interface JwtPayload {
   sub: number;
@@ -25,9 +26,14 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     super({
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        (request: Request) => {
+          // Busca el token en la cookie 'access_token' sino existe retorna null
+          return request?.cookies?.access_token || null;
+        },
+      ]),
       ignoreExpiration: false,
-      secretOrKey: jwtSecret, // Ahora 'jwtSecret' es definitivamente un string
+      secretOrKey: jwtSecret, // Ahora 'jwtSecret' es un string
     });
   }
 
