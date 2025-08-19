@@ -1,6 +1,6 @@
 // Ejemplo para create-usuario.dto.ts
 import { IsString, IsNotEmpty, IsEmail, IsOptional, MinLength, IsEnum } from 'class-validator';
-import { RolUsuario } from '../entities/usuario.entity'; // Importa el enum
+import { RolUsuario } from '../entities/usuario.entity'; 
 
 export class CreateUsuarioDto {
   @IsNotEmpty()
@@ -13,10 +13,10 @@ export class CreateUsuarioDto {
 
   @IsNotEmpty()
   @IsString()
-  @MinLength(6) // Asegura una longitud mínima para la contraseña
+  @MinLength(6) 
   password: string;
 
   @IsOptional()
-  @IsEnum(RolUsuario) // Usa el enum para el rol
+  @IsEnum(RolUsuario) 
   rol?: RolUsuario;
 }

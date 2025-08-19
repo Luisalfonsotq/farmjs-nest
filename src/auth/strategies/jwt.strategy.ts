@@ -1,10 +1,10 @@
 // src/auth/strategies/jwt.strategy.ts
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { PassportStrategy } from '@nestjs/passport';
-import { Injectable, UnauthorizedException, InternalServerErrorException } from '@nestjs/common'; 
+import { Injectable, UnauthorizedException, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { UsuarioService } from '../../usuario/usuario.service';
-import {Request} from 'express';
+import { Request } from 'express';
 
 export interface JwtPayload {
   sub: number;

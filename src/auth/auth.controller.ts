@@ -4,7 +4,7 @@ import { AuthService } from './auth.service';
 import { LoginUsuarioDto } from '../usuario/dto/login-usuario.dto'; 
 import { AuthGuard } from '@nestjs/passport';
 import { CreateUsuarioDto } from '../usuario/dto/create-usuario.dto';
-import { Response } from 'express'
+import { Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -13,7 +13,7 @@ export class AuthController {
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
   async register(@Body() createUsuarioDto: CreateUsuarioDto) {
-    return this.authService.register(createUsuarioDto);
+    return this.authService.registerAndLogin(createUsuarioDto);
   }
 
   @Post('login')
@@ -25,7 +25,8 @@ export class AuthController {
     response.cookie('access_token', access_token, {
       httpOnly: true, // No es accesible a través de js
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict', // Pretege contra CSRF
+      // 'lax' permite el envío de la cookie en peticiones GET de origen cruzado
+      sameSite: process.env.NODE_ENV === 'production' ?'strict' : 'lax', // Pretege contra CSRF
     });
 
     // Devuelve solo la info del usuario en el cuerpo de la respuesta

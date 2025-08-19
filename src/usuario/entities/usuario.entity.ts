@@ -2,9 +2,9 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, BeforeInsert, BeforeUpdate } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { Finca } from '../../finca/entities/finca.entity';
-import { UsuarioFinca } from '../../finca/entities/usuario-finca.entity'; // Asegúrate de que la ruta sea correcta
+import { UsuarioFinca } from '../../finca/entities/usuario-finca.entity';
 import { Exclude } from 'class-transformer';
-import { ControlSanitario } from '../../control-sanitario/entities/control-sanitario.entity'; // Asegúrate de que la ruta sea correcta
+import { ControlSanitario } from '../../control-sanitario/entities/control-sanitario.entity';
 
 // ENUM DE ROLES DE USUARIO
 export enum RolUsuario {
