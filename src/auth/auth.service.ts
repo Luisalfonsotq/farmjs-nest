@@ -27,8 +27,10 @@ export class AuthService {
 
     // El payload del JWT
     const payload = { sub: usuario.id, email: usuario.email, rol: usuario.rol };
+    const access_token = await this.jwtService.signAsync(payload);
+
     return {
-      access_token: await this.jwtService.signAsync(payload),
+      access_token,
       user: {
         id: usuario.id,
         nombre: usuario.nombre,
@@ -61,7 +63,7 @@ export class AuthService {
       };
 
       // 3. Llama al método de login y retorna el resultado (incluyendo el token)
-      return this.login(loginDtoForNewUser);
+      return await this.login(loginDtoForNewUser);
     } catch (error) {
       // Maneja errores específicos como correos duplicados
       if (error instanceof ConflictException) {

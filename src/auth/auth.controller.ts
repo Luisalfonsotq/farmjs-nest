@@ -4,7 +4,7 @@ import { AuthService } from './auth.service';
 import { LoginUsuarioDto } from '../usuario/dto/login-usuario.dto'; 
 import { AuthGuard } from '@nestjs/passport';
 import { CreateUsuarioDto } from '../usuario/dto/create-usuario.dto';
-import { Response } from 'express';
+import { response, Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -12,8 +12,15 @@ export class AuthController {
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
-  async register(@Body() createUsuarioDto: CreateUsuarioDto) {
-    return this.authService.registerAndLogin(createUsuarioDto);
+  async register(@Body() createUsuarioDto: CreateUsuarioDto, @Res({ passthrough: true}) response: Response) {
+    const {access_token, user} = await this.authService.registerAndLogin(createUsuarioDto);
+    response.cookie('access_token', access_token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      path: '/',
+    })
+    return {user};
   }
 
   @Post('login')
@@ -23,14 +30,26 @@ export class AuthController {
 
     // Establece el token en una cookie httpOnly mucho más segura que local storage
     response.cookie('access_token', access_token, {
-      httpOnly: true, // No es accesible a través de js
+      httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      // 'lax' permite el envío de la cookie en peticiones GET de origen cruzado
-      sameSite: process.env.NODE_ENV === 'production' ?'strict' : 'lax', // Pretege contra CSRF
+      sameSite: process.env.NODE_ENV === 'production' ?'strict' : 'lax',
+      path: '/',
+      maxAge: 3600000, // 1 hora
     });
-
-    // Devuelve solo la info del usuario en el cuerpo de la respuesta
     return { user};
+  }
+
+  //Cerrar sesión
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  async logout(@Res({ passthrough: true})response: Response){
+    response.clearCookie('access_token', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax',
+      path: '/'
+    });
+    return { message: 'Sesión cerrada exitosamente'};
   }
 
   // Ruta protegida
