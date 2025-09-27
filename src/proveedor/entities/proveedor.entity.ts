@@ -29,7 +29,7 @@ export class Proveedor {
   updated_at: Date;
 
   @Column({ type: 'timestamp', nullable: true })
-  deleted_at: Date;
+  eliminado_en: Date | null;
 
   // Relación OneToMany con Animal
   @OneToMany(() => Animal, animal => animal.proveedor)

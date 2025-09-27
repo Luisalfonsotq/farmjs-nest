@@ -1,5 +1,5 @@
 // src/usuario/entities/usuario.entity.ts
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, OneToMany, BeforeInsert, BeforeUpdate } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, OneToMany, BeforeInsert, BeforeUpdate } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { Finca } from '../../finca/entities/finca.entity';
 import { UsuarioFinca } from '../../finca/entities/usuario-finca.entity';
@@ -29,9 +29,9 @@ export class Usuario {
   @Column({ type: 'varchar', length: 255, nullable: false, select: false }) // 'select: false' evita que se cargue por defecto en las consultas
   password: string;
 
-  // 🐮 ⬅️ USO DEL ENUM PARA EL ROL
+  // USO DEL ENUM PARA EL ROL
   @Column({ type: 'enum', enum: RolUsuario, default: RolUsuario.COLABORADOR, nullable: false })
-  rol: RolUsuario; // Ahora es de tipo RolUsuario
+  rol: RolUsuario; // Uso del enum RolUsuario
 
   @OneToMany(() => Finca, finca => finca.propietario)
   fincasPropietarias: Finca[];
@@ -49,9 +49,8 @@ export class Usuario {
   @UpdateDateColumn({ name: 'updated_at' }) // Nombre explícito para la columna en BD
   updated_at: Date;
 
-  // Si decides reincorporar el soft delete:
-  // @DeleteDateColumn({ name: 'deleted_at', nullable: true })
-  // deleted_at: Date | null;
+  @DeleteDateColumn({ name: 'eliminado_en', nullable: true })
+  eliminado_en: Date | null;
 
   // 🐮 ⬅️ LÓGICA DE HASH DE CONTRASEÑA
   @BeforeInsert()

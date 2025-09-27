@@ -56,6 +56,6 @@ export class EventoAnimal {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP', name: 'updated_at' })
   updated_at: Date;
 
-  @Column({ type: 'timestamp', nullable: true, name: 'deleted_at' })
-  deleted_at: Date | null;
+  @Column({ type: 'timestamp', nullable: true, name: 'eliminado_en' })
+  eliminado_en: Date | null;
 }

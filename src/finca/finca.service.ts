@@ -44,6 +44,13 @@ export class FincaService {
     return this.fincaRepository.find({ relations: ['propietario'] });
   }
 
+  async findByPropietario(propietarioId: number): Promise<Finca[]> {
+    return this.fincaRepository.find({
+      where: { propietario: { id: propietarioId } },
+      relations: ['propietario'],
+    });
+  }
+
   async findOne(id: number): Promise<Finca> {
     const finca = await this.fincaRepository.findOne({
       where: { id },

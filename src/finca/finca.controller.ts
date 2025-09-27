@@ -1,5 +1,5 @@
 // src/finca/finca.controller.ts
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpCode, HttpStatus, Query } from '@nestjs/common';
 import { FincaService } from './finca.service';
 import { CreateFincaDto } from './dto/create-finca.dto';
 import { UpdateFincaDto } from './dto/update-finca.dto';
@@ -16,7 +16,10 @@ export class FincaController {
   }
 
   @Get()
-  async findAll() {
+  async findAll(@Query('propietario_id') propietarioId?: string) {
+    if (propietarioId) {
+      return this.fincaService.findByPropietario(+propietarioId);
+    }
     return this.fincaService.findAll();
   }
 

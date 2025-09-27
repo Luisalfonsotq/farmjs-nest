@@ -30,8 +30,8 @@ export class Finca {
   @UpdateDateColumn()
   updated_at: Date;
 
-  // @DeleteDateColumn() // Para soft delete
-  // deleted_at: Date;
+  @DeleteDateColumn()
+  eliminado_en: Date | null;
 
   // Relaciones inversas (OneToMany) con potrero
   @OneToMany(() => Potrero, potrero => potrero.finca)

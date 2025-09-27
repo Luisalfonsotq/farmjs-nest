@@ -53,15 +53,12 @@ export class ControlSanitarioService {
     }
 
     // Validaciones adicionales basadas en tipo_control
-    if (tipo_control.aplica_a_sexo && animal.sexo === 'Hembra') { // Ejemplo de lógica, revisar si es la intención
+    if (tipo_control.aplica_a_sexo && animal.sexo === 'hembra') {
         // Si aplica a sexo y el animal es hembra, podría haber una validación específica aquí.
-        // La comparación `tipo_control.aplica_a_sexo === (animal.sexo === 'Hembra')` es válida,
-        // pero la lógica de negocio puede necesitar más detalle.
     }
 
-    // 🐮 ⬅️ CORRECCIÓN 3: Usar 'medicamento_dosis' en lugar de 'medicamento'
-    if (tipo_control.requiere_medicamento && (!control_data.medicamento_dosis || control_data.medicamento_dosis.trim() === '')) {
-      throw new BadRequestException(`Este tipo de control sanitario requiere un medicamento y dosis.`);
+    if (tipo_control.requiere_medicamento && (!control_data.medicamento || control_data.medicamento.trim() === '')) {
+      throw new BadRequestException(`Este tipo de control sanitario requiere un medicamento.`);
     }
 
 

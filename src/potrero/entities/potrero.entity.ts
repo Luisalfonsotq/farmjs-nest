@@ -38,8 +38,8 @@ export class Potrero {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
   updated_at: Date;
 
-  // @Column({ type: 'timestamp', nullable: true })
-  // deleted_at: Date;
+  @Column({ type: 'timestamp', nullable: true })
+  eliminado_en: Date | null;
 
   // Relación OneToMany con Animal
   @OneToMany(() => Animal, animal => animal.potrero)

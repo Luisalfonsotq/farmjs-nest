@@ -17,38 +17,34 @@ export class ReproduccionService {
   ) {}
 
   async crear(create_dto: CreateReproduccionDto): Promise<Reproduccion> {
-    // 🐮 ⬅️ CAMBIO: Desestructurar madre_id y padre_id
-    const { madre_id, padre_id, ...reproduccion_data } = create_dto;
+    const { animal_id, toro_id, ...reproduccion_data } = create_dto;
 
-    const madre = await this.animal_repository.findOne({ where: { id: madre_id } });
+    const madre = await this.animal_repository.findOne({ where: { id: animal_id } });
     if (!madre) {
-      throw new NotFoundException(`Animal (madre) con ID ${madre_id} no encontrado.`);
+      throw new NotFoundException(`Animal (madre) con ID ${animal_id} no encontrado.`);
     }
-    if (madre.sexo !== SexoAnimal.HEMBRA) {
+    if (madre.sexo !== 'hembra') {
       throw new BadRequestException('El animal asignado como madre debe ser hembra.');
     }
 
     let padre: Animal | null = null;
-    // 🐮 ⬅️ CAMBIO: Usar padre_id
-    if (padre_id !== null && padre_id !== undefined) { // Verificar si padre_id fue proporcionado y no es null
-      padre = await this.animal_repository.findOne({ where: { id: padre_id } });
+    if (toro_id !== null && toro_id !== undefined) {
+      padre = await this.animal_repository.findOne({ where: { id: toro_id } });
       if (!padre) {
-        throw new NotFoundException(`Animal (padre/toro) con ID ${padre_id} no encontrado.`);
+        throw new NotFoundException(`Animal (padre/toro) con ID ${toro_id} no encontrado.`);
       }
-      if (padre.sexo !== SexoAnimal.MACHO) {
+      if (padre.sexo !== 'macho') {
         throw new BadRequestException('El animal asignado como padre debe ser macho.');
       }
     }
 
-    // 🐮 ⬅️ CAMBIO: Usar madre y padre, y sus IDs correspondientes
     const nueva_reproduccion = this.reproduccion_repository.create({
       ...reproduccion_data,
       madre,
-      madre_id,
+      animal_id,
       padre,
-      padre_id,
+      toro_id,
     });
-    // 🐮 ⬅️ CAMBIO: Añadir 'await' para asegurar el tipo de retorno
     return await this.reproduccion_repository.save(nueva_reproduccion);
   }
 
@@ -72,28 +68,26 @@ export class ReproduccionService {
   async actualizar(id: number, update_dto: UpdateReproduccionDto): Promise<Reproduccion> {
     const reproduccion = await this.obtener_por_id(id);
 
-    // 🐮 ⬅️ CAMBIO: Usar madre_id
-    if (update_dto.madre_id !== undefined && update_dto.madre_id !== reproduccion.madre_id) {
-      const nueva_madre = await this.animal_repository.findOne({ where: { id: update_dto.madre_id } });
-      if (!nueva_madre || nueva_madre.sexo !== SexoAnimal.HEMBRA) {
-        throw new BadRequestException(`Animal (madre) con ID ${update_dto.madre_id} no válido o no es hembra.`);
+    if (update_dto.animal_id !== undefined && update_dto.animal_id !== reproduccion.animal_id) {
+      const nueva_madre = await this.animal_repository.findOne({ where: { id: update_dto.animal_id } });
+      if (!nueva_madre || nueva_madre.sexo !== 'hembra') {
+        throw new BadRequestException(`Animal (madre) con ID ${update_dto.animal_id} no válido o no es hembra.`);
       }
       reproduccion.madre = nueva_madre;
-      reproduccion.madre_id = nueva_madre.id;
+      reproduccion.animal_id = nueva_madre.id;
     }
 
-    // 🐮 ⬅️ CAMBIO: Usar padre_id
-    if (update_dto.padre_id !== undefined && update_dto.padre_id !== reproduccion.padre_id) {
-      if (update_dto.padre_id === null) {
+    if (update_dto.toro_id !== undefined && update_dto.toro_id !== reproduccion.toro_id) {
+      if (update_dto.toro_id === null) {
         reproduccion.padre = null;
-        reproduccion.padre_id = null;
+        reproduccion.toro_id = null;
       } else {
-        const nuevo_padre = await this.animal_repository.findOne({ where: { id: update_dto.padre_id } });
-        if (!nuevo_padre || nuevo_padre.sexo !== SexoAnimal.MACHO) {
-          throw new BadRequestException(`Animal (padre/toro) con ID ${update_dto.padre_id} no válido o no es macho.`);
+        const nuevo_padre = await this.animal_repository.findOne({ where: { id: update_dto.toro_id } });
+        if (!nuevo_padre || nuevo_padre.sexo !== 'macho') {
+          throw new BadRequestException(`Animal (padre/toro) con ID ${update_dto.toro_id} no válido o no es macho.`);
         }
         reproduccion.padre = nuevo_padre;
-        reproduccion.padre_id = nuevo_padre.id;
+        reproduccion.toro_id = nuevo_padre.id;
       }
     }
 

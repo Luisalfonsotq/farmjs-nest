@@ -2,7 +2,7 @@
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, DeepPartial } from 'typeorm';
-import { Animal, SexoAnimal, EstadoAnimal } from './entities/animal.entity';
+import { Animal, SexoAnimal, EstadoSalud, EstadoReproductivo, OrigenAnimal } from './entities/animal.entity';
 import { CreateAnimalDto } from './dto/create-animal.dto';
 import { UpdateAnimalDto } from './dto/update-animal.dto';
 import { Finca } from '../finca/entities/finca.entity';
@@ -25,10 +25,10 @@ export class AnimalService {
   async crear(create_animal_dto: CreateAnimalDto): Promise<Animal> {
     const { finca_id, potrero_id, proveedor_id, ...animal_data } = create_animal_dto;
 
-    // Verificar si el numero_identificador ya existe
-    const animal_existente = await this.animal_repository.findOne({ where: { numero_identificador: animal_data.numero_identificador } });
+    // Verificar si el arete_unico ya existe
+    const animal_existente = await this.animal_repository.findOne({ where: { arete_unico: animal_data.arete_unico } });
     if (animal_existente) {
-      throw new ConflictException(`El animal con número identificador "${animal_data.numero_identificador}" ya existe.`);
+      throw new ConflictException(`El animal con arete único "${animal_data.arete_unico}" ya existe.`);
     }
 
     const finca = await this.finca_repository.findOne({ where: { id: finca_id } });
@@ -68,7 +68,9 @@ export class AnimalService {
       // potrero_id, // Similar a finca_id, TypeORM puede manejarlo.
       proveedor,
       // proveedor_id, // Similar a finca_id, TypeORM puede manejarlo.
-      estado: animal_data.estado || EstadoAnimal.ACTIVO,
+      estado_salud: animal_data.estado_salud || EstadoSalud.SANO,
+      estado_reproductivo: animal_data.estado_reproductivo,
+      origen: animal_data.origen,
     } as DeepPartial<Animal>);
 
     return await this.animal_repository.save(nuevo_animal);
@@ -137,12 +139,12 @@ export class AnimalService {
     }
 
 
-    // Asegurarse de que `sexo` y `estado` se asignen correctamente
+    // Asegurarse de que `sexo` y `estado_salud` se asignen correctamente
     if (update_animal_dto.sexo) {
       animal.sexo = update_animal_dto.sexo;
     }
-    if (update_animal_dto.estado) {
-      animal.estado = update_animal_dto.estado;
+    if (update_animal_dto.estado_salud) {
+      animal.estado_salud = update_animal_dto.estado_salud;
     }
 
     // Asignar el resto de las propiedades que no son relaciones ID

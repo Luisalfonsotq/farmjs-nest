@@ -1,5 +1,5 @@
 // src/animal/entities/animal.entity.ts
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany, OneToOne } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany, OneToOne, CreateDateColumn, UpdateDateColumn, DeleteDateColumn } from 'typeorm';
 import { Finca } from '../../finca/entities/finca.entity';
 import { Potrero } from '../../potrero/entities/potrero.entity';
 import { Proveedor } from '../../proveedor/entities/proveedor.entity';
@@ -9,58 +9,58 @@ import { Cria } from '../../cria/entities/cria.entity';
 import { EventoAnimal } from '../../evento-animal/entities/evento-animal.entity';
 
 export enum SexoAnimal {
-  MACHO = 'Macho',
-  HEMBRA = 'Hembra',
+  MACHO = 'macho',
+  HEMBRA = 'hembra',
 }
 
-export enum EstadoAnimal {
-  ACTIVO = 'Activo',        // Animal sano en el hato
-  ENFERMO = 'Enfermo',      // Animal con alguna enfermedad
-  EN_TRATAMIENTO = 'En Tratamiento', // Animal recibiendo medicación o cuidado
-  AISLADO = 'Aislado',      // Animal separado del rebaño
-  GESTACION = 'Gestación',  // Para hembras preñadas
-  VENDIDO = 'Vendido',      // Animal ha sido vendido
-  MUERTO = 'Muerto',        // Animal ha fallecido
-  DESCARTADO = 'Descartado',// Animal retirado del hato por improductividad u otras razones
+export enum EstadoReproductivo {
+  LACTANCIA = 'lactancia',
+  PRENADA = 'prenada',
+  VACIA = 'vacia',
+  EN_PRODUCCION = 'en_produccion',
+  ENGORDE = 'engorde',
+  CEBO = 'cebo',
 }
 
-@Entity('Animales')
+export enum EstadoSalud {
+  SANO = 'sano',
+  ENFERMO = 'enfermo',
+  EN_TRATAMIENTO = 'en_tratamiento',
+}
+
+export enum OrigenAnimal {
+  NATIVO = 'nativo',
+  FORANEO = 'foraneo',
+}
+
+@Entity('animales')
 export class Animal {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'varchar', length: 50, unique: true, name: 'numero_identificador' })
-  numero_identificador: string;
-
-  @Column({ type: 'varchar', length: 100, nullable: true })
-  nombre: string;
-
-  @Column({ type: 'enum', enum: SexoAnimal })
-  sexo: SexoAnimal;
+  @Column({ type: 'varchar', length: 50, unique: true })
+  arete_unico: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   raza: string;
 
-  @Column({ type: 'date', name: 'fecha_nacimiento', nullable: true })
+  @Column({ type: 'enum', enum: SexoAnimal })
+  sexo: SexoAnimal;
+
+  @Column({ type: 'date', nullable: true })
   fecha_nacimiento: Date | null;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
-  peso_nacimiento: number | null;
+  @Column({ type: 'enum', enum: EstadoReproductivo, nullable: true })
+  estado_reproductivo: EstadoReproductivo | null;
 
-  @Column({ type: 'varchar', length: 50, nullable: true })
-  color: string | null;
+  @Column({ type: 'enum', enum: EstadoSalud, default: EstadoSalud.SANO })
+  estado_salud: EstadoSalud;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
-  peso_actual: number | null;
+  @Column({ type: 'enum', enum: OrigenAnimal, nullable: true })
+  origen: OrigenAnimal | null;
 
-  @Column({ type: 'date', name: 'fecha_adquisicion', nullable: true })
+  @Column({ type: 'date', nullable: true })
   fecha_adquisicion: Date | null;
-
-  @Column({ type: 'varchar', length: 50, default: EstadoAnimal.ACTIVO })
-  estado: EstadoAnimal;
-
-  @Column({ type: 'text', nullable: true })
-  observaciones: string | null;
 
   // --- Relaciones ---
 
@@ -106,13 +106,13 @@ export class Animal {
   @OneToMany(() => EventoAnimal, evento_animal => evento_animal.animal)
   eventos_animal: EventoAnimal[];
 
-  // --- Columnas de control de tiempo ---
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
-  created_at: Date;
+  // --- Timestamps ---
+  @CreateDateColumn()
+  creado_en: Date;
 
-  @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP', name: 'updated_at' })
-  updated_at: Date;
+  @UpdateDateColumn()
+  actualizado_en: Date;
 
-  @Column({ type: 'timestamp', nullable: true, name: 'deleted_at' })
-  deleted_at: Date | null;
+  @DeleteDateColumn()
+  eliminado_en: Date | null;
 }

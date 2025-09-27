@@ -26,7 +26,7 @@ export class TipoControlSanitario {
   updated_at: Date;
 
   @Column({ type: 'timestamp', nullable: true })
-  deleted_at: Date;
+  eliminado_en: Date;
 
   // Relación OneToMany con ControlSanitario
   @OneToMany(() => ControlSanitario, control_sanitario => control_sanitario.tipo_control)
