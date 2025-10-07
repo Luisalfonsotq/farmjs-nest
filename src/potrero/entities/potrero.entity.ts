@@ -1,5 +1,5 @@
 // src/potrero/entities/potrero.entity.ts
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany, DeleteDateColumn } from 'typeorm';
 import { Finca } from '../../finca/entities/finca.entity';
 import { Animal } from '../../animal/entities/animal.entity';
 import { EventoAnimal } from 'src/evento-animal/entities/evento-animal.entity';
@@ -38,7 +38,7 @@ export class Potrero {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
   updated_at: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @DeleteDateColumn({ type: 'timestamp', nullable: true }) // Cambia @Column por @DeleteDateColumn
   eliminado_en: Date | null;
 
   // Relación OneToMany con Animal
