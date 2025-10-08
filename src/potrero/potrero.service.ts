@@ -84,6 +84,6 @@ export class PotreroService {
     if (!finca) {
       throw new NotFoundException(`Finca con ID ${fincaId} no encontrada.`);
     }
-    return this.potreroRepository.find({ where: { finca: { id: fincaId } }, relations: ['animales'] });
+    return this.potreroRepository.find({ where: { finca: { id: fincaId } }, relations: ['animales', 'finca'] });
   }
 }
