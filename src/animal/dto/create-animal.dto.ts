@@ -1,11 +1,11 @@
 // src/animal/dto/create-animal.dto.ts
-import { IsString, IsNotEmpty, IsEnum, IsNumber, IsOptional, IsDateString } from 'class-validator';
+import { IsString, IsNotEmpty, IsEnum, IsNumber, IsOptional, IsDateString, Min } from 'class-validator';
 import { SexoAnimal, EstadoSalud, EstadoReproductivo, OrigenAnimal } from '../entities/animal.entity';
 
 export class CreateAnimalDto {
   @IsNotEmpty()
   @IsString()
-  arete_unico: string;
+  identificador_unico: string;
 
   @IsOptional()
   @IsString()
@@ -14,6 +14,11 @@ export class CreateAnimalDto {
   @IsNotEmpty()
   @IsEnum(SexoAnimal)
   sexo: SexoAnimal;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  peso_kg: number;
 
   @IsOptional()
   @IsDateString()

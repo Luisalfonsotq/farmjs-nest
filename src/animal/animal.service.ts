@@ -26,9 +26,9 @@ export class AnimalService {
     const { finca_id, potrero_id, proveedor_id, ...animal_data } = create_animal_dto;
 
     // Verificar si el arete_unico ya existe
-    const animal_existente = await this.animal_repository.findOne({ where: { arete_unico: animal_data.arete_unico } });
+    const animal_existente = await this.animal_repository.findOne({ where: { identificador_unico: animal_data.identificador_unico } });
     if (animal_existente) {
-      throw new ConflictException(`El animal con arete único "${animal_data.arete_unico}" ya existe.`);
+      throw new ConflictException(`El animal con arete único "${animal_data.identificador_unico}" ya existe.`);
     }
 
     const finca = await this.finca_repository.findOne({ where: { id: finca_id } });

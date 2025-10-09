@@ -14,23 +14,23 @@ export enum SexoAnimal {
 }
 
 export enum EstadoReproductivo {
-  LACTANCIA = 'lactancia',
-  PRENADA = 'prenada',
   VACIA = 'vacia',
-  EN_PRODUCCION = 'en_produccion',
-  ENGORDE = 'engorde',
-  CEBO = 'cebo',
+  PRENADA = 'prenada',
+  LACTANDO = 'lactando',
+  EN_ENGORDE = 'en_engorde',
+  EN_PRODUCCION_LECHERA = 'en_produccion_lechera',
+  LISTO_PARA_VENTA_O_SACRIFICIO = 'listo_para_venta_o_sacrificio',
 }
 
 export enum EstadoSalud {
   SANO = 'sano',
-  ENFERMO = 'enfermo',
+  DIAGNOSTICADO_ENFERMO = 'diagnosticado_enfermo',
   EN_TRATAMIENTO = 'en_tratamiento',
 }
 
 export enum OrigenAnimal {
-  NATIVO = 'nativo',
-  FORANEO = 'foraneo',
+  NACIDO_EN_FINCA = 'nacido_en_finca',
+  COMPRADO = 'comprado',
 }
 
 @Entity('animales')
@@ -39,7 +39,7 @@ export class Animal {
   id: number;
 
   @Column({ type: 'varchar', length: 50, unique: true })
-  arete_unico: string;
+  identificador_unico: string;
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   raza: string;
@@ -47,10 +47,13 @@ export class Animal {
   @Column({ type: 'enum', enum: SexoAnimal })
   sexo: SexoAnimal;
 
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true})
+  peso_kg: number | null;
+
   @Column({ type: 'date', nullable: true })
   fecha_nacimiento: Date | null;
 
-  @Column({ type: 'enum', enum: EstadoReproductivo, nullable: true })
+  @Column({ type: 'enum', enum: EstadoReproductivo, nullable: true, comment: 'Estado reproductivo o productivo del animal' })
   estado_reproductivo: EstadoReproductivo | null;
 
   @Column({ type: 'enum', enum: EstadoSalud, default: EstadoSalud.SANO })
@@ -58,6 +61,8 @@ export class Animal {
 
   @Column({ type: 'enum', enum: OrigenAnimal, nullable: true })
   origen: OrigenAnimal | null;
+
+  // Solo para animales COMPRADO
 
   @Column({ type: 'date', nullable: true })
   fecha_adquisicion: Date | null;
