@@ -169,7 +169,7 @@ export class AnimalService {
     }
     return this.animal_repository.find({
         where: { finca: { id: finca_id } },
-        relations: ['potrero', 'proveedor'],
+        relations: ['finca','potrero', 'proveedor'],
     });
   }
 
