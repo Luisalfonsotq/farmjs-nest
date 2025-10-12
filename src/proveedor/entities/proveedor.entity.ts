@@ -1,5 +1,5 @@
 // src/proveedor/entities/proveedor.entity.ts
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, DeleteDateColumn } from 'typeorm';
 import { Animal } from '../../animal/entities/animal.entity';
 
 @Entity('Proveedores')
@@ -28,7 +28,7 @@ export class Proveedor {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
   updated_at: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @DeleteDateColumn({ type: 'timestamp', nullable: true })
   eliminado_en: Date | null;
 
   // Relación OneToMany con Animal
