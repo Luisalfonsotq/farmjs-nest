@@ -25,10 +25,11 @@ export class AnimalService {
   async crear(create_animal_dto: CreateAnimalDto): Promise<Animal> {
     const { finca_id, potrero_id, proveedor_id, ...animal_data } = create_animal_dto;
 
-    // Verificar si el arete_unico ya existe
+    // Verificar si el identificador_unico ya existe
     const animal_existente = await this.animal_repository.findOne({ where: { identificador_unico: animal_data.identificador_unico } });
+
     if (animal_existente) {
-      throw new ConflictException(`El animal con arete único "${animal_data.identificador_unico}" ya existe.`);
+      throw new ConflictException(`El animal con identificador único "${animal_data.identificador_unico}" ya está en uso.`);
     }
 
     const finca = await this.finca_repository.findOne({ where: { id: finca_id } });
@@ -73,7 +74,18 @@ export class AnimalService {
       origen: animal_data.origen,
     } as DeepPartial<Animal>);
 
-    return await this.animal_repository.save(nuevo_animal);
+    try{
+      return await this.animal_repository.save(nuevo_animal);
+    }catch(error){
+      // Capturar error de duplicado de MySQL
+      if(error.code === 'ER_DUP_ENTRY'){
+        throw new ConflictException(
+          `El identificador único "${animal_data.identificador_unico}" ya está asignado a otro animal`
+        );
+      }
+      throw error
+    }
+
   }
 
   async obtener_todos(): Promise<Animal[]> {
