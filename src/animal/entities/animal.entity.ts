@@ -33,6 +33,16 @@ export enum OrigenAnimal {
   COMPRADO = 'comprado',
 }
 
+export enum EtapaVida {
+  TERNERO = 'ternero',
+  TERNERA = 'ternera',
+  NOVILLO = 'novillo',
+  NOVILLA = 'novilla',
+  ADULTO = 'adulto',
+  ADULTA = 'adulta',
+  ADULTO_MAYOR = 'adulto_mayor',
+}
+
 @Entity('animales')
 export class Animal {
   @PrimaryGeneratedColumn()
@@ -53,6 +63,9 @@ export class Animal {
   @Column({ type: 'date', nullable: true })
   fecha_nacimiento: Date | null;
 
+  @Column({ type: 'enum', enum: EtapaVida, nullable: true })
+  etapa_vida: EtapaVida | null;
+
   @Column({ type: 'enum', enum: EstadoReproductivo, nullable: true, comment: 'Estado reproductivo o productivo del animal' })
   estado_reproductivo: EstadoReproductivo | null;
 
@@ -66,6 +79,17 @@ export class Animal {
 
   @Column({ type: 'date', nullable: true })
   fecha_adquisicion: Date | null;
+
+  // Campos calculados para alertas/schedules
+
+  @Column({ type: 'date', nullable: true, comment: 'Fecha probable de parto calculada' })
+  fecha_probable_parto: Date | null;
+
+  @Column({ type: 'date', nullable: true, comment: 'Última fecha de control sanitario' })
+  ultima_fecha_control_sanitario: Date | null;
+
+  @Column({ type: 'boolean', default: false, comment: 'Si requiere atención sanitaria urgente' })
+  requiere_atencion_sanitaria: boolean;
 
   // --- Relaciones ---
 

@@ -1,13 +1,14 @@
 // src/animal/animal.service.ts
 import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DeepPartial } from 'typeorm';
+import { Repository, DeepPartial, Not, IsNull } from 'typeorm';
 import { Animal, SexoAnimal, EstadoSalud, EstadoReproductivo, OrigenAnimal } from './entities/animal.entity';
 import { CreateAnimalDto } from './dto/create-animal.dto';
 import { UpdateAnimalDto } from './dto/update-animal.dto';
 import { Finca } from '../finca/entities/finca.entity';
 import { Potrero } from '../potrero/entities/potrero.entity';
 import { Proveedor } from '../proveedor/entities/proveedor.entity';
+import { AnimalScheduleService } from './animal-schedule.service';
 
 @Injectable()
 export class AnimalService {
@@ -20,13 +21,16 @@ export class AnimalService {
     private potrero_repository: Repository<Potrero>,
     @InjectRepository(Proveedor)
     private proveedor_repository: Repository<Proveedor>,
+    private animal_schedule_service: AnimalScheduleService,
   ) {}
 
   async crear(create_animal_dto: CreateAnimalDto): Promise<Animal> {
     const { finca_id, potrero_id, proveedor_id, ...animal_data } = create_animal_dto;
 
     // Verificar si el identificador_unico ya existe
-    const animal_existente = await this.animal_repository.findOne({ where: { identificador_unico: animal_data.identificador_unico } });
+    const animal_existente = await this.animal_repository.findOne({ 
+      where: { identificador_unico: animal_data.identificador_unico } 
+    });
 
     if (animal_existente) {
       throw new ConflictException(`El animal con identificador único "${animal_data.identificador_unico}" ya está en uso.`);
@@ -39,15 +43,13 @@ export class AnimalService {
 
     let potrero: Potrero | null = null;
     if (potrero_id) {
-      // 🐄 ⬅️ CORRECCIÓN CLAVE: Cargar la relación 'finca' del Potrero
       potrero = await this.potrero_repository.findOne({
         where: { id: potrero_id },
-        relations: ['finca'], // ¡Asegura que la relación 'finca' se cargue!
+        relations: ['finca'],
       });
       if (!potrero) {
         throw new NotFoundException(`Potrero con ID ${potrero_id} no encontrado.`);
       }
-      // Ahora potrero.finca debería estar definido si el potrero existe
       if (potrero.finca.id !== finca.id) {
         throw new BadRequestException(`El potrero con ID ${potrero_id} no pertenece a la finca con ID ${finca.id}.`);
       }
@@ -64,28 +66,28 @@ export class AnimalService {
     const nuevo_animal: Animal = this.animal_repository.create({
       ...animal_data,
       finca,
-      // finca_id, // Si tu entidad Animal tiene una columna `finca_id` y una relación `finca` (ManyToOne), TypeORM manejará el ID automáticamente si le pasas el objeto `finca`. Puedes omitir `finca_id` aquí.
       potrero,
-      // potrero_id, // Similar a finca_id, TypeORM puede manejarlo.
       proveedor,
-      // proveedor_id, // Similar a finca_id, TypeORM puede manejarlo.
       estado_salud: animal_data.estado_salud || EstadoSalud.SANO,
       estado_reproductivo: animal_data.estado_reproductivo,
       origen: animal_data.origen,
     } as DeepPartial<Animal>);
 
-    try{
+    // Calcular etapa de vida si tiene fecha de nacimiento
+    if (nuevo_animal.fecha_nacimiento) {
+      nuevo_animal.etapa_vida = this.animal_schedule_service.obtener_etapa_vida(nuevo_animal);
+    }
+
+    try {
       return await this.animal_repository.save(nuevo_animal);
-    }catch(error){
-      // Capturar error de duplicado de MySQL
-      if(error.code === 'ER_DUP_ENTRY'){
+    } catch (error) {
+      if (error.code === 'ER_DUP_ENTRY') {
         throw new ConflictException(
           `El identificador único "${animal_data.identificador_unico}" ya está asignado a otro animal`
         );
       }
-      throw error
+      throw error;
     }
-
   }
 
   async obtener_todos(): Promise<Animal[]> {
@@ -108,27 +110,23 @@ export class AnimalService {
   async actualizar(id: number, update_animal_dto: UpdateAnimalDto): Promise<Animal> {
     const animal = await this.obtener_por_id(id);
 
-    // Actualizar relaciones si los IDs cambian
     if (update_animal_dto.finca_id !== undefined && update_animal_dto.finca_id !== animal.finca_id) {
-        const nueva_finca = await this.finca_repository.findOne({ where: { id: update_animal_dto.finca_id } });
-        if (!nueva_finca) throw new NotFoundException(`Finca con ID ${update_animal_dto.finca_id} no encontrada.`);
-        animal.finca = nueva_finca;
-        animal.finca_id = nueva_finca.id;
+      const nueva_finca = await this.finca_repository.findOne({ where: { id: update_animal_dto.finca_id } });
+      if (!nueva_finca) throw new NotFoundException(`Finca con ID ${update_animal_dto.finca_id} no encontrada.`);
+      animal.finca = nueva_finca;
+      animal.finca_id = nueva_finca.id;
     }
-
 
     if (update_animal_dto.potrero_id !== undefined) {
       if (update_animal_dto.potrero_id === null) {
         animal.potrero = null;
         animal.potrero_id = null;
       } else if (update_animal_dto.potrero_id !== animal.potrero_id) {
-        // 🐄 ⬅️ CORRECCIÓN CLAVE: Cargar la relación 'finca' del Potrero al actualizar
         const nuevo_potrero = await this.potrero_repository.findOne({
           where: { id: update_animal_dto.potrero_id },
-          relations: ['finca'], // ¡Asegura que la relación 'finca' se cargue!
+          relations: ['finca'],
         });
         if (!nuevo_potrero) throw new NotFoundException(`Potrero con ID ${update_animal_dto.potrero_id} no encontrado.`);
-        // Ahora nuevo_potrero.finca debería estar definido
         if (nuevo_potrero.finca.id !== animal.finca.id) {
           throw new BadRequestException(`El potrero con ID ${update_animal_dto.potrero_id} no pertenece a la finca del animal.`);
         }
@@ -137,21 +135,20 @@ export class AnimalService {
       }
     }
 
-
     if (update_animal_dto.proveedor_id !== undefined) {
       if (update_animal_dto.proveedor_id === null) {
         animal.proveedor = null;
         animal.proveedor_id = null;
       } else if (update_animal_dto.proveedor_id !== animal.proveedor_id) {
-        const nuevo_proveedor = await this.proveedor_repository.findOne({ where: { id: update_animal_dto.proveedor_id } });
+        const nuevo_proveedor = await this.proveedor_repository.findOne({ 
+          where: { id: update_animal_dto.proveedor_id } 
+        });
         if (!nuevo_proveedor) throw new NotFoundException(`Proveedor con ID ${update_animal_dto.proveedor_id} no encontrado.`);
         animal.proveedor = nuevo_proveedor;
         animal.proveedor_id = nuevo_proveedor.id;
       }
     }
 
-
-    // Asegurarse de que `sexo` y `estado_salud` se asignen correctamente
     if (update_animal_dto.sexo) {
       animal.sexo = update_animal_dto.sexo;
     }
@@ -159,10 +156,13 @@ export class AnimalService {
       animal.estado_salud = update_animal_dto.estado_salud;
     }
 
-    // Asignar el resto de las propiedades que no son relaciones ID
     const { finca_id: _, potrero_id: __, proveedor_id: ___, ...restOfUpdateDto } = update_animal_dto;
     Object.assign(animal, restOfUpdateDto);
 
+    // Recalcular etapa de vida si cambió la fecha de nacimiento
+    if (update_animal_dto.fecha_nacimiento && animal.fecha_nacimiento) {
+      animal.etapa_vida = this.animal_schedule_service.obtener_etapa_vida(animal);
+    }
 
     return this.animal_repository.save(animal);
   }
@@ -177,22 +177,104 @@ export class AnimalService {
   async obtener_animales_por_finca(finca_id: number): Promise<Animal[]> {
     const finca = await this.finca_repository.findOne({ where: { id: finca_id } });
     if (!finca) {
-        throw new NotFoundException(`Finca con ID ${finca_id} no encontrada.`);
+      throw new NotFoundException(`Finca con ID ${finca_id} no encontrada.`);
     }
     return this.animal_repository.find({
-        where: { finca: { id: finca_id } },
-        relations: ['finca','potrero', 'proveedor'],
+      where: { finca: { id: finca_id } },
+      relations: ['finca', 'potrero', 'proveedor'],
     });
   }
 
   async obtener_animales_por_potrero(potrero_id: number): Promise<Animal[]> {
     const potrero = await this.potrero_repository.findOne({ where: { id: potrero_id } });
     if (!potrero) {
-        throw new NotFoundException(`Potrero con ID ${potrero_id} no encontrado.`);
+      throw new NotFoundException(`Potrero con ID ${potrero_id} no encontrado.`);
     }
     return this.animal_repository.find({
-        where: { potrero: { id: potrero_id } },
-        relations: ['finca', 'proveedor'],
+      where: { potrero: { id: potrero_id } },
+      relations: ['finca', 'proveedor'],
     });
+  }
+
+  // Nuevos métodos para reportes y alertas
+
+  async obtener_animales_con_alertas_sanitarias(finca_id?: number): Promise<Animal[]> {
+    const where: any = { 
+      requiere_atencion_sanitaria: true,
+      eliminado_en: IsNull()
+    };
+    
+    if (finca_id) {
+      where.finca = { id: finca_id };
+    }
+
+    return this.animal_repository.find({
+      where,
+      relations: ['finca', 'potrero'],
+    });
+  }
+
+  async obtener_animales_proximos_a_parir(dias_antes: number = 30, finca_id?: number): Promise<Animal[]> {
+    const fecha_limite = new Date();
+    fecha_limite.setDate(fecha_limite.getDate() + dias_antes);
+
+    const where: any = { 
+      fecha_probable_parto: Not(IsNull()),
+      eliminado_en: IsNull()
+    };
+    
+    if (finca_id) {
+      where.finca = { id: finca_id };
+    }
+
+    const animales = await this.animal_repository.find({
+      where,
+      relations: ['finca', 'potrero'],
+    });
+
+    return animales.filter(animal => 
+      animal.fecha_probable_parto && 
+      animal.fecha_probable_parto <= fecha_limite &&
+      animal.fecha_probable_parto >= new Date()
+    );
+  }
+
+  async obtener_estadisticas_etapas_vida(finca_id?: number): Promise<any> {
+    const where: any = {
+      eliminado_en: IsNull()
+    };
+    
+    if (finca_id) {
+      where.finca = { id: finca_id };
+    }
+
+    const animales = await this.animal_repository.find({ where });
+
+    const estadisticas = {
+      terneros: 0,
+      terneras: 0,
+      novillos: 0,
+      novillas: 0,
+      adultos: 0,
+      adultas: 0,
+      adultos_mayores: 0,
+      sin_etapa: 0,
+      total: animales.length
+    };
+
+    animales.forEach(animal => {
+      switch (animal.etapa_vida) {
+        case 'ternero': estadisticas.terneros++; break;
+        case 'ternera': estadisticas.terneras++; break;
+        case 'novillo': estadisticas.novillos++; break;
+        case 'novilla': estadisticas.novillas++; break;
+        case 'adulto': estadisticas.adultos++; break;
+        case 'adulta': estadisticas.adultas++; break;
+        case 'adulto_mayor': estadisticas.adultos_mayores++; break;
+        default: estadisticas.sin_etapa++;
+      }
+    });
+
+    return estadisticas;
   }
 }

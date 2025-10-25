@@ -9,34 +9,72 @@ import {
   Delete,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import { AnimalService } from './animal.service';
 import { CreateAnimalDto } from './dto/create-animal.dto';
 import { UpdateAnimalDto } from './dto/update-animal.dto';
-import { Animal } from './entities/animal.entity'; // Import the Animal entity
+import { Animal } from './entities/animal.entity';
 
-@Controller('animales') // Define a base route for this controller
+@Controller('animales')
 export class AnimalController {
   constructor(private readonly animalService: AnimalService) {}
 
   @Post()
-  @HttpCode(HttpStatus.CREATED) // Return 201 Created on successful creation
+  @HttpCode(HttpStatus.CREATED)
   async create(@Body() createAnimalDto: CreateAnimalDto): Promise<Animal> {
-    // 🐄 ⬅️ CAMBIO: 'create' a 'crear'
     return this.animalService.crear(createAnimalDto);
   }
 
   @Get()
-  @HttpCode(HttpStatus.OK) // Return 200 OK on successful retrieval
+  @HttpCode(HttpStatus.OK)
   async findAll(): Promise<Animal[]> {
-    // 🐄 ⬅️ CAMBIO: 'findAll' a 'obtener_todos'
     return this.animalService.obtener_todos();
+  }
+
+  @Get('alertas-sanitarias')
+  @HttpCode(HttpStatus.OK)
+  async getAlertasSanitarias(@Query('finca_id') fincaId?: string): Promise<Animal[]> {
+    return this.animalService.obtener_animales_con_alertas_sanitarias(
+      fincaId ? +fincaId : undefined
+    );
+  }
+
+  @Get('proximos-partos')
+  @HttpCode(HttpStatus.OK)
+  async getProximosPartos(
+    @Query('dias') dias?: string,
+    @Query('finca_id') fincaId?: string
+  ): Promise<Animal[]> {
+    return this.animalService.obtener_animales_proximos_a_parir(
+      dias ? +dias : 30,
+      fincaId ? +fincaId : undefined
+    );
+  }
+
+  @Get('estadisticas/etapas-vida')
+  @HttpCode(HttpStatus.OK)
+  async getEstadisticasEtapasVida(@Query('finca_id') fincaId?: string): Promise<any> {
+    return this.animalService.obtener_estadisticas_etapas_vida(
+      fincaId ? +fincaId : undefined
+    );
+  }
+
+  @Get('finca/:fincaId')
+  @HttpCode(HttpStatus.OK)
+  async findAnimalsByFinca(@Param('fincaId') fincaId: string): Promise<Animal[]> {
+    return this.animalService.obtener_animales_por_finca(+fincaId);
+  }
+
+  @Get('potrero/:potreroId')
+  @HttpCode(HttpStatus.OK)
+  async findAnimalsByPotrero(@Param('potreroId') potreroId: string): Promise<Animal[]> {
+    return this.animalService.obtener_animales_por_potrero(+potreroId);
   }
 
   @Get(':id')
   @HttpCode(HttpStatus.OK)
   async findOne(@Param('id') id: string): Promise<Animal> {
-    // 🐄 ⬅️ CAMBIO: 'findOne' a 'obtener_por_id'
     return this.animalService.obtener_por_id(+id);
   }
 
@@ -46,30 +84,12 @@ export class AnimalController {
     @Param('id') id: string,
     @Body() updateAnimalDto: UpdateAnimalDto,
   ): Promise<Animal> {
-    // 🐄 ⬅️ CAMBIO: 'update' a 'actualizar'
     return this.animalService.actualizar(+id, updateAnimalDto);
   }
 
   @Delete(':id')
-  @HttpCode(HttpStatus.NO_CONTENT) // Return 204 No Content on successful deletion
+  @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string): Promise<void> {
-    // 🐄 ⬅️ CAMBIO: 'remove' a 'eliminar'
     await this.animalService.eliminar(+id);
-  }
-
-  @Get('finca/:fincaId')
-  @HttpCode(HttpStatus.OK)
-  async findAnimalsByFinca(@Param('fincaId') fincaId: string): Promise<Animal[]> {
-    // 🐄 ⬅️ CAMBIO: 'findAnimalsByFinca' a 'obtener_animales_por_finca' (o el nombre que le hayas dado)
-    // NOTA: Si no tienes este método en tu AnimalService, deberás agregarlo.
-    return this.animalService.obtener_animales_por_finca(+fincaId);
-  }
-
-  @Get('potrero/:potreroId')
-  @HttpCode(HttpStatus.OK)
-  async findAnimalsByPotrero(@Param('potreroId') potreroId: string): Promise<Animal[]> {
-    // 🐄 ⬅️ CAMBIO: 'findAnimalsByPotrero' a 'obtener_animales_por_potrero' (o el nombre que le hayas dado)
-    // NOTA: Si no tienes este método en tu AnimalService, deberás agregarlo.
-    return this.animalService.obtener_animales_por_potrero(+potreroId);
   }
 }
