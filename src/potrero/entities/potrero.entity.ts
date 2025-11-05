@@ -18,6 +18,24 @@ export class Potrero {
   @Column({ type: 'varchar', length: 100, nullable: true })
   tipo_pasto: string;
 
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 7,
+    nullable: true,
+    comment: 'Latitud de la ubicación del potrero'
+  })
+  latitud: number | null;
+
+  @Column({
+    type: 'decimal',
+    precision: 10,
+    scale: 7,
+    nullable: true,
+    comment: 'Longitud de la ubicación del potrero'
+  })
+  longitud: number | null;
+
   // Relación ManyToOne con Finca
   @ManyToOne(() => Finca, finca => finca.potreros)
   @JoinColumn({ name: 'finca_id' })

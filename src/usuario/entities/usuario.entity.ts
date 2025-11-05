@@ -8,13 +8,14 @@ import { ControlSanitario } from '../../control-sanitario/entities/control-sanit
 
 // ENUM DE ROLES DE USUARIO
 export enum RolUsuario {
+  PENDING = 'Pending',
   ADMINISTRADOR = 'Administrador',
   SUPERVISOR = 'Supervisor',
   VETERINARIO = 'Veterinario',
   COLABORADOR = 'Colaborador',
 }
 
-@Entity('usuarios') // Nombre de la tabla en la base de datos
+@Entity('usuarios')
 export class Usuario {
   @PrimaryGeneratedColumn()
   id: number;
@@ -29,9 +30,9 @@ export class Usuario {
   @Column({ type: 'varchar', length: 255, nullable: false, select: false }) // 'select: false' evita que se cargue por defecto en las consultas
   password: string;
 
-  // USO DEL ENUM PARA EL ROL
-  @Column({ type: 'enum', enum: RolUsuario, default: RolUsuario.COLABORADOR, nullable: false })
-  rol: RolUsuario; // Uso del enum RolUsuario
+  // EL ROL
+  @Column({ type: 'enum', enum: RolUsuario, default: RolUsuario.PENDING, nullable: false })
+  rol: RolUsuario;
 
   @OneToMany(() => Finca, finca => finca.propietario)
   fincasPropietarias: Finca[];
@@ -43,10 +44,10 @@ export class Usuario {
   @OneToMany(() => ControlSanitario, control_sanitario => control_sanitario.veterinario) // Ajustado a control_sanitario
   controles_sanitarios_realizados: ControlSanitario[]; // Nombre de la propiedad inversa más claro
 
-  @CreateDateColumn({ name: 'created_at' }) // Nombre explícito para la columna en BD
+  @CreateDateColumn({ name: 'created_at' })
   created_at: Date;
 
-  @UpdateDateColumn({ name: 'updated_at' }) // Nombre explícito para la columna en BD
+  @UpdateDateColumn({ name: 'updated_at' })
   updated_at: Date;
 
   @DeleteDateColumn({ name: 'eliminado_en', nullable: true })

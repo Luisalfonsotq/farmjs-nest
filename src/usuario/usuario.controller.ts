@@ -12,26 +12,34 @@ import { Roles } from '../auth/decorators/roles.decorator';
 export class UsuarioController {
   constructor(private readonly usuarioService: UsuarioService) {}
 
-  // ✅ Endpoint público para el registro de usuarios
-  // Este es el único endpoint que no necesita un guard de autenticación
-  // y se encargará de llamar al método `create` del servicio.
+  // Endpoint público para registro - siempre asigna rol PENDING 
   @Post('registro')
   @HttpCode(HttpStatus.CREATED)
   async create(@Body() createUsuarioDto: CreateUsuarioDto) {
-    // Llama al método `create` que no tiene la lógica de forzar el rol
     return this.usuarioService.create(createUsuarioDto);
   }
 
-  // ✅ Endpoint para que los administradores creen nuevos usuarios
+  // Solo administradores crean nuevos usuarios con roles específicos
   @Post()
   @Roles(RolUsuario.ADMINISTRADOR)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  async createByAdmin(@Body() createUsuarioDto: CreateUsuarioDto, @Request() req) {
-    // Llama al nuevo método `createOrUpdateByAdmin` y le pasa el usuario que está haciendo la petición
+  async createByAdmin(@Body() createUsuarioDto: CreateUsuarioDto & {rol?: RolUsuario}, @Request() req) {
     return this.usuarioService.createOrUpdateByAdmin(createUsuarioDto, req.user);
   }
 
-  // ✅ Endpoint para listar todos los usuarios (solo para administradores)
+  // NUEVO: Endpoint para aprobar usuarios pendientes
+  @Patch(':id/aprobar')
+  @Roles(RolUsuario.ADMINISTRADOR)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  async aprobarUsuario(
+    @Param('id') id: string,
+    @Body('rol') nuevoRol: RolUsuario,
+    @Request() req
+  ){
+    return this.usuarioService.aprobarUsuario(+id, nuevoRol, req.user);
+  }
+
+  // Listar todos los usuarios (solo para administradores)
   @Get()
   @Roles(RolUsuario.ADMINISTRADOR)
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -39,14 +47,14 @@ export class UsuarioController {
     return this.usuarioService.findAll();
   }
 
-  // ✅ Endpoint para obtener un usuario por ID (protegido)
+  // Obtener un usuario por ID
   @Get(':id')
-  @UseGuards(JwtAuthGuard) // Puede ser accedido por cualquier usuario autenticado
+  @UseGuards(JwtAuthGuard)
   findOne(@Param('id') id: string) {
     return this.usuarioService.findOne(+id);
   }
 
-  // ✅ Endpoint para que los administradores actualicen usuarios
+  // Actualizar usuario (solo administradores)
   @Patch(':id')
   @Roles(RolUsuario.ADMINISTRADOR)
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -54,7 +62,7 @@ export class UsuarioController {
     return this.usuarioService.update(+id, updateUsuarioDto);
   }
 
-  // ✅ Endpoint para que los administradores eliminen usuarios
+  // Eliminar usuarios (solo administradores)
   @Delete(':id')
   @Roles(RolUsuario.ADMINISTRADOR)
   @UseGuards(JwtAuthGuard, RolesGuard)

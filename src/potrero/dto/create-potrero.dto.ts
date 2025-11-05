@@ -1,5 +1,6 @@
 // src/potrero/dto/create-potrero.dto.ts
-import { IsString, IsNumber, IsNotEmpty, Min, IsOptional, IsDateString } from 'class-validator';
+import { Type } from 'class-transformer';
+import { IsString, IsNumber, IsNotEmpty, Min, Max, IsOptional, IsDateString } from 'class-validator';
 
 export class CreatePotreroDto {
   @IsNotEmpty()
@@ -14,6 +15,20 @@ export class CreatePotreroDto {
   @IsOptional()
   @IsString()
   tipo_pasto?: string;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(-90, { message: 'La latitud debe estar entre -90 y 90' })
+  @Max(90, { message: 'La latitud debe estar entre -90 y 90' })
+  @Type(() => Number)
+  latitud?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(-180, { message: 'La longitud debe estar entre -180 y 180' })
+  @Max(180, { message: 'La longitud debe estar entre -180 y 180' })
+  @Type(() => Number)
+  longitud?: number;
 
   @IsNotEmpty()
   @IsNumber()

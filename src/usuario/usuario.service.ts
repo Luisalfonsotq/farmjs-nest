@@ -13,32 +13,35 @@ export class UsuarioService {
     private usuarioRepository: Repository<Usuario>,
   ) {}
 
-  // ✅ Método para la creación inicial desde el registro público
+  // Registro público - SIEMPRE asigna rol PENDING
   async create(createUsuarioDto: CreateUsuarioDto): Promise<Usuario> {
     const existingUser = await this.usuarioRepository.findOne({ where: { email: createUsuarioDto.email } });
     if (existingUser) {
       throw new ConflictException('El email ya está registrado.');
     }
 
-    // Se asume que el DTO del registro público no tiene un 'usuarioActual'
-    // y el rol viene directamente del frontend
-    const newUser = this.usuarioRepository.create(createUsuarioDto);
+    // FUERZA el rol a PENDING
+    const newUser = this.usuarioRepository.create({
+      ...createUsuarioDto,
+      rol: RolUsuario.PENDING, // Rol inicial forzado para SaaS
+    });
+
     return await this.usuarioRepository.save(newUser);
   }
 
-  // ✅ Nuevo método para que un administrador cree o actualice un usuario
-  async createOrUpdateByAdmin(createUsuarioDto: CreateUsuarioDto, usuarioActual: Usuario): Promise<Usuario> {
-    // Si el usuario autenticado no es un administrador, lanza un error de autorización
+  // Solo administradores pueden crear usuarios con roles específicos
+  async createOrUpdateByAdmin(createUsuarioDto: CreateUsuarioDto & {rol?: RolUsuario}, usuarioActual: Usuario): Promise<Usuario> {
     if (usuarioActual.rol !== RolUsuario.ADMINISTRADOR) {
-      throw new UnauthorizedException('Solo los administradores pueden crear o modificar usuarios de esta manera.');
+      throw new UnauthorizedException('Solo los administradores pueden crear usuarios con roles específicos.');
     }
 
-    const existingUser = await this.usuarioRepository.findOne({ where: { email: createUsuarioDto.email } });
+    const existingUser = await this.usuarioRepository.findOne({ where: { email: createUsuarioDto.email } 
+    });
     if (existingUser) {
       throw new ConflictException('El email ya está registrado.');
     }
 
-    // El administrador puede especificar el rol, no se fuerza
+    // El administrador puede especificar el rol
     const newUser = this.usuarioRepository.create(createUsuarioDto);
     return await this.usuarioRepository.save(newUser);
   }
@@ -84,4 +87,19 @@ export class UsuarioService {
       throw new NotFoundException(`Usuario con ID ${id} no encontrado.`);
     }
   }
+
+  // Nuevo método para que el administrador apruebe usuarios pendientes
+  async aprobarUsuario(id: number, nuevoRol: RolUsuario, adminActual: Usuario): Promise<Usuario>{
+    if(adminActual.rol !== RolUsuario.ADMINISTRADOR){
+      throw new UnauthorizedException('Solo los administradores pueden aprobar usuarios.')
+    }
+    const usuario = await this.findOne(id);
+
+    if(usuario.rol !== RolUsuario.PENDING){
+      throw new ConflictException('El usuario ya tiene un rol asignado.')
+    }
+    usuario.rol = nuevoRol;
+    return await this.usuarioRepository.save(usuario);
+  }
+
 }

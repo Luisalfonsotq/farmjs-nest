@@ -16,6 +16,25 @@ export class Finca {
   @Column({ type: 'varchar', length: 255, nullable: true })
   ubicacion: string;
 
+  // Coordenadas geográficas para ubicación en mapa
+  @Column({ 
+    type: 'decimal', 
+    precision: 10, 
+    scale: 7, 
+    nullable: true,
+    comment: 'Latitud de la ubicación de la finca' 
+  })
+  latitud: number | null;
+
+  @Column({ 
+    type: 'decimal', 
+    precision: 10, 
+    scale: 7, 
+    nullable: true,
+    comment: 'Longitud de la ubicación de la finca' 
+  })
+  longitud: number | null;
+
   // Relacion con el usuario propietario (1:N, usuario puede ser propietario de varias fincas).
   @ManyToOne(() => Usuario, usuario => usuario.fincasPropietarias)
   @JoinColumn({ name: 'propietario_id'})
@@ -46,3 +65,4 @@ export class Finca {
   usuariosFincas: UsuarioFinca[];
  
 }
+
