@@ -47,14 +47,14 @@ export class FincaService {
   async findByPropietario(propietarioId: number): Promise<Finca[]> {
     return this.fincaRepository.find({
       where: { propietario: { id: propietarioId } },
-      relations: ['propietario'],
+      relations: ['propietario', 'potreros', 'animales'],
     });
   }
 
   async findOne(id: number): Promise<Finca> {
     const finca = await this.fincaRepository.findOne({
       where: { id },
-      relations: ['propietario', 'potreros', 'animales'],
+      relations: ['propietario'],
     }); // Incluir relaciones
     if (!finca) {
       throw new NotFoundException(`Finca con ID ${id} no encontrada.`);

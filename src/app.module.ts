@@ -31,6 +31,7 @@ import { Reproduccion } from './reproduccion/entities/reproduccion.entity';
 import { Cria } from './cria/entities/cria.entity';
 import { TipoEventoAnimal } from './tipo-evento-animal/entities/tipo-evento-animal.entity';
 import { EventoAnimal } from './evento-animal/entities/evento-animal.entity';
+import { InvitacionModule } from './invitacion/invitacion.module';
 
 
 // Función de ayuda para obtener variables de entorno
@@ -85,7 +86,8 @@ function getEnv(key: string): string {
     ReproduccionModule, 
     CriaModule, 
     TipoEventoAnimalModule,
-    EventoAnimalModule, 
+    EventoAnimalModule,
+    InvitacionModule, 
   ],
   controllers: [],
   providers: [],
