@@ -17,6 +17,7 @@ import { ReproduccionModule } from './reproduccion/reproduccion.module';
 import { CriaModule } from './cria/cria.module'; 
 import { TipoEventoAnimalModule } from './tipo-evento-animal/tipo-evento-animal.module'; 
 import { EventoAnimalModule } from './evento-animal/evento-animal.module';
+import { InvitacionModule } from './invitacion/invitacion.module';
 
 // Importa entidades
 import { Usuario } from './usuario/entities/usuario.entity';
@@ -31,7 +32,7 @@ import { Reproduccion } from './reproduccion/entities/reproduccion.entity';
 import { Cria } from './cria/entities/cria.entity';
 import { TipoEventoAnimal } from './tipo-evento-animal/entities/tipo-evento-animal.entity';
 import { EventoAnimal } from './evento-animal/entities/evento-animal.entity';
-import { InvitacionModule } from './invitacion/invitacion.module';
+import { Invitacion } from './invitacion/entities/invitacion.entity';
 
 
 // Función de ayuda para obtener variables de entorno
@@ -70,6 +71,7 @@ function getEnv(key: string): string {
         Cria,
         TipoEventoAnimal,
         EventoAnimal,
+        Invitacion,
       ],
       // synchronize: process.env.NODE_ENV !== 'production',
       logging: process.env.NODE_ENV !== 'production',
