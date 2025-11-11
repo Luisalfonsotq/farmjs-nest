@@ -20,7 +20,7 @@ export class ControlSanitarioService {
     private tipo_control_repository: Repository<TipoControlSanitario>,
     @InjectRepository(Usuario)
     private usuario_repository: Repository<Usuario>,
-  ) {}
+  ) { }
 
   async crear(create_dto: CreateControlSanitarioDto): Promise<ControlSanitario> {
     const { animal_id, tipo_control_id, veterinario_id, ...control_data } = create_dto;
@@ -54,7 +54,7 @@ export class ControlSanitarioService {
 
     // Validaciones adicionales basadas en tipo_control
     if (tipo_control.aplica_a_sexo && animal.sexo === 'hembra') {
-        // Si aplica a sexo y el animal es hembra, podría haber una validación específica aquí.
+      // Si aplica a sexo y el animal es hembra, podría haber una validación específica aquí.
     }
 
     if (tipo_control.requiere_medicamento && (!control_data.medicamento || control_data.medicamento.trim() === '')) {
@@ -147,5 +147,117 @@ export class ControlSanitarioService {
       where: { animal: { id: animal_id } },
       relations: ['tipo_control', 'veterinario'],
     });
+  }
+
+  // Agregar al servicio existente
+
+  async obtener_estadisticas_veterinario(veterinario_id: number, mes?: number, anio?: number): Promise<any> {
+    const fechaInicio = mes && anio
+      ? new Date(anio, mes - 1, 1)
+      : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+
+    const fechaFin = new Date(fechaInicio);
+    fechaFin.setMonth(fechaFin.getMonth() + 1);
+
+    const controles = await this.control_sanitario_repository
+      .createQueryBuilder('control')
+      .leftJoinAndSelect('control.animal', 'animal')
+      .leftJoinAndSelect('control.tipo_control', 'tipo')
+      .where('control.veterinario_id = :veterinario_id', { veterinario_id })
+      .andWhere('control.fecha >= :fechaInicio', { fechaInicio })
+      .andWhere('control.fecha < :fechaFin', { fechaFin })
+      .getMany();
+
+    const animalesUnicos = new Set(controles.map(c => c.animal_id));
+
+    return {
+      total_controles: controles.length,
+      animales_atendidos: animalesUnicos.size,
+      controles_hoy: controles.filter(c =>
+        new Date(c.fecha).toDateString() === new Date().toDateString()
+      ).length,
+      por_tipo: this.agrupar_por_tipo(controles),
+      costo_total: controles.reduce((sum, c) => sum + (Number(c.costo) || 0), 0)
+    };
+  }
+
+  private agrupar_por_tipo(controles: ControlSanitario[]): any[] {
+    const grupos = controles.reduce((acc, control) => {
+      const tipo = control.tipo_control?.nombre || 'Sin tipo';
+      if (!acc[tipo]) acc[tipo] = { nombre: tipo, cantidad: 0 };
+      acc[tipo].cantidad++;
+      return acc;
+    }, {});
+
+    return Object.values(grupos);
+  }
+
+  async obtener_proximas_vacunaciones(dias: number = 30): Promise<any[]> {
+    const hoy = new Date();
+    const fechaLimite = new Date();
+    fechaLimite.setDate(hoy.getDate() + dias);
+
+    // Obtener último control de vacunación por animal
+    const ultimosControles = await this.control_sanitario_repository
+      .createQueryBuilder('control')
+      .leftJoinAndSelect('control.animal', 'animal')
+      .leftJoinAndSelect('control.tipo_control', 'tipo')
+      .where('tipo.nombre LIKE :vacuna', { vacuna: '%vacun%' })
+      .orderBy('control.fecha', 'DESC')
+      .getMany();
+
+    // Agrupar por tipo y calcular próximas fechas
+    const vacunacionesPendientes: Array<{
+      tipo: string;
+      cantidad_animales: number;
+      urgente: boolean;
+    }> = [];
+
+    const tiposVacuna = [...new Set(ultimosControles.map(c => c.tipo_control?.nombre).filter(Boolean))];
+
+    for (const tipo of tiposVacuna) {
+      const controlesTipo = ultimosControles.filter(c => c.tipo_control?.nombre === tipo);
+      const animalesPendientes = controlesTipo.filter(c => {
+        const ultimaFecha = new Date(c.fecha);
+        ultimaFecha.setDate(ultimaFecha.getDate() + 180); // 6 meses
+        return ultimaFecha <= fechaLimite;
+      });
+
+      if (animalesPendientes.length > 0) {
+        vacunacionesPendientes.push({
+          tipo: tipo || 'Sin tipo',
+          cantidad_animales: animalesPendientes.length,
+          urgente: animalesPendientes.some(c => {
+            const ultimaFecha = new Date(c.fecha);
+            ultimaFecha.setDate(ultimaFecha.getDate() + 180);
+            return ultimaFecha <= new Date(hoy.getTime() + 7 * 24 * 60 * 60 * 1000);
+          })
+        });
+      }
+    }
+
+    return vacunacionesPendientes;
+  }
+
+  async obtener_historial_animal(animal_id: number): Promise<any> {
+    const controles = await this.control_sanitario_repository.find({
+      where: { animal_id },
+      relations: ['tipo_control', 'veterinario'],
+      order: { fecha: 'DESC' }
+    });
+
+    const animal = await this.animal_repository.findOne({
+      where: { id: animal_id },
+      relations: ['finca']
+    });
+
+    return {
+      animal,
+      total_controles: controles.length,
+      ultimo_control: controles[0] || null,
+      controles_por_tipo: this.agrupar_por_tipo(controles),
+      costo_total: controles.reduce((sum, c) => sum + (Number(c.costo) || 0), 0),
+      historial: controles
+    };
   }
 }
