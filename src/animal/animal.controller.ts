@@ -1,4 +1,3 @@
-// src/animal/animal.controller.ts
 import {
   Controller,
   Get,
@@ -10,15 +9,19 @@ import {
   HttpCode,
   HttpStatus,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { AnimalService } from './animal.service';
 import { CreateAnimalDto } from './dto/create-animal.dto';
 import { UpdateAnimalDto } from './dto/update-animal.dto';
 import { Animal } from './entities/animal.entity';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { FincaAccessGuard } from '../auth/guards/finca-access.guard';
 
 @Controller('animales')
+@UseGuards(JwtAuthGuard, FincaAccessGuard)
 export class AnimalController {
-  constructor(private readonly animalService: AnimalService) {}
+  constructor(private readonly animalService: AnimalService) { }
 
   @Post()
   @HttpCode(HttpStatus.CREATED)

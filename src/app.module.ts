@@ -10,12 +10,12 @@ import { FincaModule } from './finca/finca.module';
 import { AuthModule } from './auth/auth.module';
 import { PotreroModule } from './potrero/potrero.module';
 import { AnimalModule } from './animal/animal.module';
-import { ProveedorModule } from './proveedor/proveedor.module'; 
+import { ProveedorModule } from './proveedor/proveedor.module';
 import { TipoControlSanitarioModule } from './tipo-control-sanitario/tipo-control-sanitario.module';
-import { ControlSanitarioModule } from './control-sanitario/control-sanitario.module'; 
-import { ReproduccionModule } from './reproduccion/reproduccion.module'; 
-import { CriaModule } from './cria/cria.module'; 
-import { TipoEventoAnimalModule } from './tipo-evento-animal/tipo-evento-animal.module'; 
+import { ControlSanitarioModule } from './control-sanitario/control-sanitario.module';
+import { ReproduccionModule } from './reproduccion/reproduccion.module';
+import { CriaModule } from './cria/cria.module';
+import { TipoEventoAnimalModule } from './tipo-evento-animal/tipo-evento-animal.module';
 import { EventoAnimalModule } from './evento-animal/evento-animal.module';
 import { InvitacionModule } from './invitacion/invitacion.module';
 
@@ -84,14 +84,14 @@ function getEnv(key: string): string {
     AnimalModule,
     ProveedorModule,
     TipoControlSanitarioModule,
-    ControlSanitarioModule, 
-    ReproduccionModule, 
-    CriaModule, 
+    ControlSanitarioModule,
+    ReproduccionModule,
+    CriaModule,
     TipoEventoAnimalModule,
     EventoAnimalModule,
-    InvitacionModule, 
+    InvitacionModule,
   ],
   controllers: [],
   providers: [],
 })
-export class AppModule {}
+export class AppModule { }

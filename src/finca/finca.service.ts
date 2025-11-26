@@ -16,7 +16,7 @@ export class FincaService {
     private fincaRepository: Repository<Finca>,
     @InjectRepository(UsuarioFinca)
     private usuarioFincaRepository: Repository<UsuarioFinca>,
-    @InjectRepository(Usuario) // Para validar el propietario
+    @InjectRepository(Usuario)
     private usuarioRepository: Repository<Usuario>,
   ) { }
 
@@ -28,7 +28,7 @@ export class FincaService {
       throw new NotFoundException(`Usuario con ID ${propietario_id} no encontrado`);
     }
 
-    // 🐮 ⬅️ CORRECCIÓN CLAVE AQUÍ: Solo el rol ADMINISTRADOR puede crear fincas.
+    // Solo el rol ADMINISTRADOR puede crear fincas
     if (propietario.rol !== RolUsuario.ADMINISTRADOR) {
       throw new BadRequestException('Solo un usuario con rol de Administrador puede ser propietario de una nueva finca.');
     }
@@ -37,7 +37,17 @@ export class FincaService {
       ...fincaData,
       propietario: propietario,
     });
-    return this.fincaRepository.save(newfinca);
+
+    const savedFinca = await this.fincaRepository.save(newfinca);
+
+    // ✅ SOLUCIÓN: Crear automáticamente la entrada en UsuarioFinca para el propietario
+    const usuarioFinca = this.usuarioFincaRepository.create({
+      usuarioId: propietario_id,
+      fincaId: savedFinca.id,
+    });
+    await this.usuarioFincaRepository.save(usuarioFinca);
+
+    return savedFinca;
   }
 
   async findAll(): Promise<Finca[]> {
@@ -55,7 +65,7 @@ export class FincaService {
     const finca = await this.fincaRepository.findOne({
       where: { id },
       relations: ['propietario'],
-    }); // Incluir relaciones
+    });
     if (!finca) {
       throw new NotFoundException(`Finca con ID ${id} no encontrada.`);
     }
@@ -63,13 +73,13 @@ export class FincaService {
   }
 
   async update(id: number, updateFincaDto: UpdateFincaDto): Promise<Finca> {
-    const finca = await this.findOne(id); // Reutiliza a findOne
+    const finca = await this.findOne(id);
     Object.assign(finca, updateFincaDto);
     return this.fincaRepository.save(finca);
   }
 
   async remove(id: number): Promise<void> {
-    const result = await this.fincaRepository.softDelete(id); // Usa softDelete por el campo deleted_at
+    const result = await this.fincaRepository.softDelete(id);
     if (result.affected === 0) {
       throw new NotFoundException(`Finca con ID ${id} no encontrada.`);
     }
@@ -87,9 +97,6 @@ export class FincaService {
       throw new NotFoundException(`Finca con ID ${fincaId} no encontrada.`);
     }
 
-    // Aquí, la lógica para asignar un usuario a una finca (capataz) parece correcta
-    // ya que mencionas que el Supervisor puede hacerse cargo de labores de capataz.
-    // Esto significa que Administrador y Supervisor pueden ser asignados a fincas.
     if (user.rol !== RolUsuario.ADMINISTRADOR && user.rol !== RolUsuario.SUPERVISOR) {
       throw new BadRequestException('El usuario no tiene el rol adecuado para gestionar fincas (solo Administrador o Supervisor).');
     }
