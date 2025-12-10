@@ -7,6 +7,7 @@ import { ControlSanitario } from '../../control-sanitario/entities/control-sanit
 import { Reproduccion } from '../../reproduccion/entities/reproduccion.entity';
 import { Cria } from '../../cria/entities/cria.entity';
 import { EventoAnimal } from '../../evento-animal/entities/evento-animal.entity';
+import { ProduccionLeche } from '../../produccion-leche/entities/produccion-leche.entity';
 
 export enum SexoAnimal {
   MACHO = 'macho',
@@ -57,7 +58,7 @@ export class Animal {
   @Column({ type: 'enum', enum: SexoAnimal })
   sexo: SexoAnimal;
 
-  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true})
+  @Column({ type: 'decimal', precision: 10, scale: 2, nullable: true })
   peso_kg: number | null;
 
   @Column({ type: 'date', nullable: true })
@@ -134,6 +135,9 @@ export class Animal {
 
   @OneToMany(() => EventoAnimal, evento_animal => evento_animal.animal)
   eventos_animal: EventoAnimal[];
+
+  @OneToMany(() => ProduccionLeche, produccion => produccion.animal)
+  producciones_leche: ProduccionLeche[];
 
   // --- Timestamps ---
   @CreateDateColumn()

@@ -18,6 +18,7 @@ import { CriaModule } from './cria/cria.module';
 import { TipoEventoAnimalModule } from './tipo-evento-animal/tipo-evento-animal.module';
 import { EventoAnimalModule } from './evento-animal/evento-animal.module';
 import { InvitacionModule } from './invitacion/invitacion.module';
+import { ProduccionLecheModule } from './produccion-leche/produccion-leche.module';
 
 // Importa entidades
 import { Usuario } from './usuario/entities/usuario.entity';
@@ -33,6 +34,7 @@ import { Cria } from './cria/entities/cria.entity';
 import { TipoEventoAnimal } from './tipo-evento-animal/entities/tipo-evento-animal.entity';
 import { EventoAnimal } from './evento-animal/entities/evento-animal.entity';
 import { Invitacion } from './invitacion/entities/invitacion.entity';
+import { ProduccionLeche } from './produccion-leche/entities/produccion-leche.entity';
 
 
 // Función de ayuda para obtener variables de entorno
@@ -72,8 +74,10 @@ function getEnv(key: string): string {
         TipoEventoAnimal,
         EventoAnimal,
         Invitacion,
+        ProduccionLeche,
       ],
-      // synchronize: process.env.NODE_ENV !== 'production',
+      synchronize: false,
+      // process.env.NODE_ENV !== 'production',
       logging: process.env.NODE_ENV !== 'production',
       // softDelete: true, // Descomenta si habilitas soft delete globalmente
     }),
@@ -90,6 +94,7 @@ function getEnv(key: string): string {
     TipoEventoAnimalModule,
     EventoAnimalModule,
     InvitacionModule,
+    ProduccionLecheModule,
   ],
   controllers: [],
   providers: [],
