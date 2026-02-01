@@ -1,6 +1,6 @@
 // src/tipo-control-sanitario/entities/tipo-control-sanitario.entity.ts
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
-import { ControlSanitario } from '../../control-sanitario/entities/control-sanitario.entity'; 
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, DeleteDateColumn } from 'typeorm';
+import { ControlSanitario } from '../../control-sanitario/entities/control-sanitario.entity';
 
 @Entity('TiposControlesSanitarios')
 export class TipoControlSanitario {
@@ -25,7 +25,7 @@ export class TipoControlSanitario {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP' })
   updated_at: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
+  @DeleteDateColumn({ name: 'eliminado_en' })
   eliminado_en: Date;
 
   // Relación OneToMany con ControlSanitario
