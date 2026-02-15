@@ -1,5 +1,5 @@
 // src/evento-animal/entities/evento-animal.entity.ts
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, DeleteDateColumn } from 'typeorm';
 import { Animal } from '../../animal/entities/animal.entity';
 import { TipoEventoAnimal } from '../../tipo-evento-animal/entities/tipo-evento-animal.entity';
 import { Potrero } from '../../potrero/entities/potrero.entity';
@@ -56,6 +56,6 @@ export class EventoAnimal {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP', name: 'updated_at' })
   updated_at: Date;
 
-  @Column({ type: 'timestamp', nullable: true, name: 'eliminado_en' })
+  @DeleteDateColumn({ type: 'timestamp', nullable: true, name: 'eliminado_en' })
   eliminado_en: Date | null;
 }

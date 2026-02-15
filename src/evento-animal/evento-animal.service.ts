@@ -20,7 +20,7 @@ export class EventoAnimalService {
     private tipo_evento_repository: Repository<TipoEventoAnimal>,
     @InjectRepository(Potrero)
     private potrero_repository: Repository<Potrero>,
-  ) {}
+  ) { }
 
   async crear(create_dto: CreateEventoAnimalDto): Promise<EventoAnimal> {
     const { animal_id, tipo_evento_id, potrero_anterior_id, potrero_actual_id, ...evento_data } = create_dto;
@@ -65,7 +65,13 @@ export class EventoAnimalService {
       animal.potrero_id = potrero_actual ? potrero_actual.id : null;
       await this.animal_repository.save(animal);
     }
-     // Opcional: Para el evento "Pesaje", el valor_medida es obligatorio.
+
+    // Lógica para eventos de "Baja" o "Muerte" y otros que implican salida del animal
+    const tipos_salida = ['baja', 'muerte', 'venta', 'sacrificio', 'robo', 'hurto', 'donación', 'desaparición', 'siniestro', 'reclamo'];
+    if (tipos_salida.some(t => tipo_evento.nombre.toLowerCase().includes(t))) {
+      await this.animal_repository.softDelete(animal_id);
+    }
+    // Opcional: Para el evento "Pesaje", el valor_medida es obligatorio.
     if (tipo_evento.nombre === 'Pesaje' && (evento_data.valor_medida === undefined || evento_data.valor_medida === null)) {
       throw new BadRequestException('Para un evento de "Pesaje", el campo "valor_medida" (peso) es obligatorio.');
     }
@@ -148,10 +154,10 @@ export class EventoAnimalService {
     // Validaciones de tipo de evento al actualizar
     if (evento.tipo_evento.nombre === 'Cambio de Potrero') {
       if (update_dto.potrero_anterior_id === undefined || update_dto.potrero_actual_id === undefined) {
-          throw new BadRequestException('Para un "Cambio de Potrero", los IDs de potrero anterior y actual son obligatorios.');
+        throw new BadRequestException('Para un "Cambio de Potrero", los IDs de potrero anterior y actual son obligatorios.');
       }
       if (update_dto.potrero_anterior_id === update_dto.potrero_actual_id) {
-          throw new BadRequestException('El potrero anterior y el actual no pueden ser el mismo para un "Cambio de Potrero".');
+        throw new BadRequestException('El potrero anterior y el actual no pueden ser el mismo para un "Cambio de Potrero".');
       }
     }
     if (evento.tipo_evento.nombre === 'Pesaje' && (update_dto.valor_medida === undefined || update_dto.valor_medida === null)) {

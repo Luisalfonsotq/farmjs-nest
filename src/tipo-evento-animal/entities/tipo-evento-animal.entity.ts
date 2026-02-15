@@ -1,5 +1,5 @@
 // src/tipo-evento-animal/entities/tipo-evento-animal.entity.ts
-import { Entity, PrimaryGeneratedColumn, Column, OneToMany } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, OneToMany, DeleteDateColumn } from 'typeorm';
 import { EventoAnimal } from '../../evento-animal/entities/evento-animal.entity';
 
 @Entity('TiposEventosAnimales')
@@ -19,7 +19,7 @@ export class TipoEventoAnimal {
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', onUpdate: 'CURRENT_TIMESTAMP', name: 'updated_at' })
   updated_at: Date;
 
-  @Column({ type: 'timestamp', nullable: true, name: 'eliminado_en' })
+  @DeleteDateColumn({ type: 'timestamp', nullable: true, name: 'eliminado_en' })
   eliminado_en: Date | null;
 
   // Relación OneToMany con EventoAnimal
