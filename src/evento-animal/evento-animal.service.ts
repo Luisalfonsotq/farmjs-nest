@@ -92,16 +92,28 @@ export class EventoAnimalService {
   }
 
   async obtener_todos(): Promise<EventoAnimal[]> {
-    return this.evento_animal_repository.find({
-      relations: ['animal', 'tipo_evento', 'potrero_anterior', 'potrero_actual'],
-    });
+    return this.evento_animal_repository.createQueryBuilder('evento')
+      .withDeleted()
+      .where('evento.eliminado_en IS NULL')
+      .leftJoinAndSelect('evento.animal', 'animal')
+      .leftJoinAndSelect('evento.tipo_evento', 'tipo_evento')
+      .leftJoinAndSelect('evento.potrero_anterior', 'potrero_anterior')
+      .leftJoinAndSelect('evento.potrero_actual', 'potrero_actual')
+      .orderBy('evento.fecha', 'DESC')
+      .getMany();
   }
 
   async obtener_por_id(id: number): Promise<EventoAnimal> {
-    const evento = await this.evento_animal_repository.findOne({
-      where: { id },
-      relations: ['animal', 'tipo_evento', 'potrero_anterior', 'potrero_actual'],
-    });
+    const evento = await this.evento_animal_repository.createQueryBuilder('evento')
+      .withDeleted()
+      .where('evento.eliminado_en IS NULL')
+      .andWhere('evento.id = :id', { id })
+      .leftJoinAndSelect('evento.animal', 'animal')
+      .leftJoinAndSelect('evento.tipo_evento', 'tipo_evento')
+      .leftJoinAndSelect('evento.potrero_anterior', 'potrero_anterior')
+      .leftJoinAndSelect('evento.potrero_actual', 'potrero_actual')
+      .getOne();
+
     if (!evento) {
       throw new NotFoundException(`Evento de animal con ID ${id} no encontrado.`);
     }
