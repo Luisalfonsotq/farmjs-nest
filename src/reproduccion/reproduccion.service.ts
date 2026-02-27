@@ -14,7 +14,7 @@ export class ReproduccionService {
     private reproduccion_repository: Repository<Reproduccion>,
     @InjectRepository(Animal)
     private animal_repository: Repository<Animal>,
-  ) {}
+  ) { }
 
   async crear(create_dto: CreateReproduccionDto): Promise<Reproduccion> {
     const { animal_id, toro_id, ...reproduccion_data } = create_dto;
@@ -37,6 +37,9 @@ export class ReproduccionService {
         throw new BadRequestException('El animal asignado como padre debe ser macho.');
       }
     }
+
+    const reproduccionMock = { ...reproduccion_data } as Partial<Reproduccion>;
+    this.validateFechas(reproduccionMock);
 
     const nueva_reproduccion = this.reproduccion_repository.create({
       ...reproduccion_data,
@@ -92,6 +95,7 @@ export class ReproduccionService {
     }
 
     Object.assign(reproduccion, update_dto);
+    this.validateFechas(reproduccion);
     return await this.reproduccion_repository.save(reproduccion); // 🐮 ⬅️ Añadir 'await'
   }
 
@@ -111,5 +115,58 @@ export class ReproduccionService {
       where: { madre: { id: madre_id } },
       relations: ['padre'],
     });
+  }
+
+  private validateFechas(data: Partial<Reproduccion>) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const clearTime = (d: Date | string) => {
+      const date = new Date(d);
+      date.setHours(0, 0, 0, 0);
+      return date;
+    };
+
+    const fechasEnFuturo = [
+      { name: 'fecha_celo', val: data.fecha_celo },
+      { name: 'fecha_monta', val: data.fecha_monta },
+      { name: 'fecha_confirmacion_prenez', val: data.fecha_confirmacion_prenez },
+      { name: 'fecha_parto', val: data.fecha_parto },
+    ];
+
+    for (const f of fechasEnFuturo) {
+      if (f.val) {
+        if (clearTime(f.val) > today) {
+          throw new BadRequestException(`La ${f.name.replace('_', ' ')} no puede estar en el futuro.`);
+        }
+      }
+    }
+
+    if (data.fecha_monta && data.fecha_celo) {
+      if (clearTime(data.fecha_monta) < clearTime(data.fecha_celo)) {
+        throw new BadRequestException('La fecha de monta no puede ser anterior a la fecha de celo.');
+      }
+    }
+
+    if (data.fecha_confirmacion_prenez && data.fecha_monta) {
+      if (clearTime(data.fecha_confirmacion_prenez) < clearTime(data.fecha_monta)) {
+        throw new BadRequestException('La fecha de confirmación de preñez no puede ser anterior a la fecha de monta.');
+      }
+    }
+
+    if (data.fecha_parto && data.fecha_confirmacion_prenez) {
+      if (clearTime(data.fecha_parto) < clearTime(data.fecha_confirmacion_prenez)) {
+        throw new BadRequestException('La fecha de parto no puede ser anterior a la confirmación de preñez.');
+      }
+    }
+
+    if (data.fecha_parto && data.fecha_monta) {
+      const diffTime = Math.abs(clearTime(data.fecha_parto).getTime() - clearTime(data.fecha_monta).getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      // Tiempos de gestación permitidos (260 a 300 días)
+      if (diffDays < 260 || diffDays > 300) {
+        throw new BadRequestException(`El tiempo de gestación (${diffDays} días) es inusual. Debe estar entre 260 y 300 días en bovinos.`);
+      }
+    }
   }
 }

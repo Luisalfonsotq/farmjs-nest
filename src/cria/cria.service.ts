@@ -14,7 +14,7 @@ export class CriaService {
     private cria_repository: Repository<Cria>,
     @InjectRepository(Animal)
     private animal_repository: Repository<Animal>,
-  ) {}
+  ) { }
 
   async crear(create_dto: CreateCriaDto): Promise<Cria> {
     // La fecha_nacimiento ahora pertenece a la entidad Animal, no a Cria.
@@ -44,11 +44,13 @@ export class CriaService {
       }
     }
 
-    // Creamos la cría usando las relaciones, sin los _id ni fecha_nacimiento
+    // Creamos la cría usando las relaciones y sincronizando fecha_nacimiento desde el animal
     const nueva_cria = this.cria_repository.create({
       cria_animal,
       madre: madre_animal,
       padre: padre_animal,
+      // Heredamos la fecha de nacimiento del animal si está disponible
+      fecha_nacimiento: cria_animal.fecha_nacimiento ?? null,
     });
     return this.cria_repository.save(nueva_cria);
   }
@@ -74,7 +76,7 @@ export class CriaService {
     const cria = await this.obtener_por_id(id);
 
     if (update_dto.animal_id && update_dto.animal_id !== cria.animal_id) {
-        throw new BadRequestException('El ID del animal (cría) no puede ser cambiado en un registro de cría existente.');
+      throw new BadRequestException('El ID del animal (cría) no puede ser cambiado en un registro de cría existente.');
     }
 
     if (update_dto.madre_id && update_dto.madre_id !== cria.madre_id) {
@@ -101,7 +103,10 @@ export class CriaService {
       }
     }
 
-    Object.assign(cria, update_dto);
+    // Solo aplicar campos escalares seguros del DTO (no sobrescribir relaciones ya seteadas)
+    if (update_dto.fecha_nacimiento !== undefined) {
+      cria.fecha_nacimiento = update_dto.fecha_nacimiento;
+    }
     return this.cria_repository.save(cria);
   }
 

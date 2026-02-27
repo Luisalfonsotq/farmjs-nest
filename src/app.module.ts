@@ -76,7 +76,7 @@ function getEnv(key: string): string {
         Invitacion,
         ProduccionLeche,
       ],
-      synchronize: false,
+      synchronize: false, // Cuando está en false, se conecta a la base de datos pero no crean ni modifican ninguna tabla
       // process.env.NODE_ENV !== 'production',
       logging: process.env.NODE_ENV !== 'production',
       // softDelete: true, // Descomenta si habilitas soft delete globalmente

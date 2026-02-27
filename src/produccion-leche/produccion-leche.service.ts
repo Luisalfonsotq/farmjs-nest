@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateProduccionLecheDto } from './dto/create-produccion-leche.dto';
@@ -33,6 +33,8 @@ export class ProduccionLecheService {
 
         // Optional: Validate animal belongs to finca if strictly enforced
         // if (animal.finca_id !== finca.id) ... 
+
+        this.validateProduccion(data);
 
         const nuevaProduccion = this.produccionLecheRepository.create({
             ...data,
@@ -98,6 +100,8 @@ export class ProduccionLecheService {
         }
 
         Object.assign(produccion, data);
+        this.validateProduccion(produccion);
+
         return await this.produccionLecheRepository.save(produccion);
     }
 
@@ -118,5 +122,27 @@ export class ProduccionLecheService {
             .getRawOne();
 
         return parseFloat(result.total) || 0;
+    }
+
+    private validateProduccion(data: { fecha?: string | Date; cantidad?: number; }) {
+        if (data.cantidad !== undefined && data.cantidad !== null) {
+            const cantidadNum = typeof data.cantidad === 'string' ? parseFloat(data.cantidad) : data.cantidad;
+            if (cantidadNum <= 0) {
+                throw new BadRequestException('La cantidad de leche debe ser mayor que 0.');
+            }
+            if (cantidadNum > 100) {
+                throw new BadRequestException('La cantidad de leche registrada es inusualmente alta (> 100 litros). Verifique el valor.');
+            }
+        }
+        if (data.fecha) {
+            const currentDate = new Date();
+            currentDate.setHours(0, 0, 0, 0); // Consider today valid even if later in the day
+            const inputDate = new Date(data.fecha);
+            inputDate.setHours(0, 0, 0, 0);
+
+            if (inputDate > currentDate) {
+                throw new BadRequestException('La fecha de producción no puede estar en el futuro.');
+            }
+        }
     }
 }

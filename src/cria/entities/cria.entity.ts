@@ -31,8 +31,8 @@ export class Cria {
   @Column({ name: 'padre_id', nullable: true }) // <-- CAMBIO AQUÍ: nullable: true
   padre_id: number | null; // <-- CAMBIO AQUÍ: Puede ser nulo
 
-  @Column({ type: 'date', name: 'fecha_nacimiento' }) // Duplicado de Animal.fecha_nacimiento para simplicidad
-  fecha_nacimiento: Date;
+  @Column({ type: 'date', name: 'fecha_nacimiento', nullable: true }) // Opcional: se hereda del Animal asociado
+  fecha_nacimiento: Date | null;
 
   @Column({ type: 'timestamp', default: () => 'CURRENT_TIMESTAMP', name: 'created_at' })
   created_at: Date;
