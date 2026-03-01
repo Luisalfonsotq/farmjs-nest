@@ -19,6 +19,7 @@ import { TipoEventoAnimalModule } from './tipo-evento-animal/tipo-evento-animal.
 import { EventoAnimalModule } from './evento-animal/evento-animal.module';
 import { InvitacionModule } from './invitacion/invitacion.module';
 import { ProduccionLecheModule } from './produccion-leche/produccion-leche.module';
+import { ReportesModule } from './reportes/reportes.module';
 
 // Importa entidades
 import { Usuario } from './usuario/entities/usuario.entity';
@@ -95,6 +96,7 @@ function getEnv(key: string): string {
     EventoAnimalModule,
     InvitacionModule,
     ProduccionLecheModule,
+    ReportesModule,
   ],
   controllers: [],
   providers: [],
