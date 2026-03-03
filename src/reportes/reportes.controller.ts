@@ -1,12 +1,13 @@
-// src/reportes/reportes.controller.ts
 import {
     Controller,
     Get,
     Param,
     ParseIntPipe,
     Query,
+    Res,
     UseGuards,
 } from '@nestjs/common';
+import { Response } from 'express';
 import { ReportesService } from './reportes.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { FincaAccessGuard } from '../auth/guards/finca-access.guard';
@@ -154,5 +155,52 @@ export class ReportesController {
         @Param('fincaId', ParseIntPipe) fincaId: number,
     ) {
         return this.reportesService.getDistribucionPorEstadoSalud(fincaId);
+    }
+
+    // ─── EXPORTACIÓN ───────────────────────────────────────────────────────────
+
+    /**
+     * GET /reportes/finca/:fincaId/exportar/excel?meses=12&nombre=MiFinca
+     * Descarga un archivo Excel (.xlsx) con todos los KPIs de la finca.
+     */
+    @Get('exportar/excel')
+    async exportarExcel(
+        @Param('fincaId', ParseIntPipe) fincaId: number,
+        @Query('meses') meses: string,
+        @Query('nombre') nombre: string,
+        @Res() res: Response,
+    ) {
+        const buffer = await this.reportesService.generarExcelFinca(
+            fincaId,
+            meses ? parseInt(meses, 10) : 12,
+        );
+        const filename = `reporte-finca-${fincaId}-${Date.now()}.xlsx`;
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
+        res.end(buffer);
+    }
+
+    /**
+     * GET /reportes/finca/:fincaId/exportar/pdf?meses=12&nombre=MiFinca
+     * Descarga un reporte PDF completo con los KPIs de la finca.
+     */
+    @Get('exportar/pdf')
+    async exportarPdf(
+        @Param('fincaId', ParseIntPipe) fincaId: number,
+        @Query('meses') meses: string,
+        @Query('nombre') nombre: string,
+        @Res() res: Response,
+    ) {
+        const buffer = await this.reportesService.generarPdfFinca(
+            fincaId,
+            meses ? parseInt(meses, 10) : 12,
+            nombre || `Finca-${fincaId}`,
+        );
+        const filename = `reporte-finca-${fincaId}-${Date.now()}.pdf`;
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+        res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition');
+        res.end(buffer);
     }
 }

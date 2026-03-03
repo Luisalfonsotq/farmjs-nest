@@ -1,5 +1,8 @@
 // src/reportes/reportes.service.ts
 import { Injectable } from '@nestjs/common';
+import * as ExcelJS from 'exceljs';
+import * as pdfMake from 'pdfmake/build/pdfmake';
+import * as pdfFonts from 'pdfmake/build/vfs_fonts';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, IsNull, Not } from 'typeorm';
 
@@ -30,7 +33,10 @@ export class ReportesService {
 
         @InjectRepository(Cria)
         private criaRepo: Repository<Cria>,
-    ) { }
+    ) {
+        // Inicializar pdfmake con las fuentes incluidas
+        (pdfMake as any).vfs = (pdfFonts as any).pdfMake?.vfs ?? (pdfFonts as any).vfs ?? {};
+    }
 
     // ──────────────────────────────────────────────
     // KPI RESUMEN GENERAL DE UNA FINCA
@@ -412,5 +418,378 @@ export class ReportesService {
             estado: r.estado,
             total: parseInt(r.total || '0', 10),
         }));
+    }
+
+    // ──────────────────────────────────────────────
+    // EXPORTACIÓN EXCEL
+    // ──────────────────────────────────────────────
+
+    /**
+     * Genera un archivo Excel con múltiples hojas:
+     * Resumen, Producción de Leche, Reproducción, Sanidad.
+     */
+    async generarExcelFinca(finca_id: number, meses = 12): Promise<Buffer> {
+        const [
+            resumen,
+            produccionMensual,
+            topAnimales,
+            estadRep,
+            estadSanidad,
+            distRaza,
+            distEtapa,
+            distSalud,
+        ] = await Promise.all([
+            this.getResumenFinca(finca_id),
+            this.getProduccionMensual(finca_id, meses),
+            this.getTopAnimalesProductores(finca_id, 10),
+            this.getEstadisticasReproduccion(finca_id, meses),
+            this.getEstadisticasSanidad(finca_id, meses),
+            this.getDistribucionPorRaza(finca_id),
+            this.getDistribucionPorEtapaVida(finca_id),
+            this.getDistribucionPorEstadoSalud(finca_id),
+        ]);
+
+        const workbook = new ExcelJS.Workbook();
+        workbook.creator = 'HERDIX';
+        workbook.created = new Date();
+
+        // Estilo encabezado común
+        const headerStyle: Partial<ExcelJS.Style> = {
+            font: { bold: true, color: { argb: 'FFFFFFFF' }, size: 11 },
+            fill: { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF059669' } },
+            alignment: { horizontal: 'center', vertical: 'middle' },
+            border: {
+                bottom: { style: 'thin', color: { argb: 'FF047857' } },
+            },
+        };
+        const addHeaders = (ws: ExcelJS.Worksheet, cols: string[]) => {
+            const row = ws.addRow(cols);
+            row.eachCell(cell => Object.assign(cell, headerStyle));
+            row.height = 22;
+        };
+
+        // ── Hoja 1: Resumen ──────────────────────────────────────────────────
+        const wsResumen = workbook.addWorksheet('Resumen');
+        wsResumen.columns = [
+            { header: 'Indicador', key: 'k', width: 34 },
+            { header: 'Valor', key: 'v', width: 20 },
+        ];
+        addHeaders(wsResumen, ['Indicador', 'Valor']);
+        const resumenRows = [
+            ['Total Animales', resumen.animales.total],
+            ['Machos', resumen.animales.machos],
+            ['Hembras', resumen.animales.hembras],
+            ['Enfermos', resumen.animales.enfermos],
+            ['En Tratamiento', resumen.animales.en_tratamiento],
+            ['Con Alerta Sanitaria', resumen.animales.con_alerta_sanitaria],
+            ['Litros Mes Actual', resumen.produccion_leche.litros_mes_actual],
+            ['Partos Mes Actual', resumen.reproduccion.partos_mes_actual],
+            ['Próximos Partos (30 días)', resumen.reproduccion.proximos_partos_30_dias],
+        ];
+        resumenRows.forEach(r => wsResumen.addRow(r));
+
+        // ── Hoja 2: Producción de Leche ──────────────────────────────────────
+        const wsProd = workbook.addWorksheet('Producción Leche');
+        wsProd.columns = [
+            { key: 'mes', width: 14 },
+            { key: 'litros', width: 16 },
+            { key: 'animales', width: 18 },
+            { key: 'prom', width: 20 },
+        ];
+        addHeaders(wsProd, ['Mes', 'Total Litros', 'Animales Activos', 'Promedio Diario']);
+        produccionMensual.forEach(r =>
+            wsProd.addRow([r.mes, r.total_litros, r.animales_activos, r.promedio_diario]));
+
+        // ── Hoja 3: Top Animales ─────────────────────────────────────────────
+        const wsTop = workbook.addWorksheet('Top Animales');
+        wsTop.columns = [
+            { key: 'id', width: 12 },
+            { key: 'ident', width: 22 },
+            { key: 'raza', width: 18 },
+            { key: 'litros', width: 16 },
+            { key: 'registros', width: 14 },
+        ];
+        addHeaders(wsTop, ['ID', 'Identificador', 'Raza', 'Total Litros', 'Registros']);
+        topAnimales.forEach(r =>
+            wsTop.addRow([r.animal_id, r.identificador, r.raza, r.total_litros, r.registros]));
+
+        // ── Hoja 4: Reproducción ─────────────────────────────────────────────
+        const wsRep = workbook.addWorksheet('Reproducción');
+        wsRep.columns = [
+            { key: 'mes', width: 14 },
+            { key: 'partos', width: 14 },
+            { key: 'crias', width: 14 },
+        ];
+        addHeaders(wsRep, ['Mes', 'Partos', 'Crías']);
+        estadRep.partos_por_mes.forEach(r =>
+            wsRep.addRow([r.mes, r.total_partos, r.total_crias]));
+        wsRep.addRow([]);
+        wsRep.addRow(['Preñeces Activas', estadRep.prenez_activa]);
+        wsRep.addRow([]);
+        wsRep.addRow(['Tipo de Monta', 'Total']);
+        estadRep.por_tipo_monta.forEach(r => wsRep.addRow([r.tipo_monta, r.total]));
+
+        // ── Hoja 5: Sanidad ──────────────────────────────────────────────────
+        const wsSan = workbook.addWorksheet('Sanidad');
+        wsSan.columns = [
+            { key: 'tipo', width: 28 },
+            { key: 'total', width: 12 },
+            { key: 'costo', width: 18 },
+        ];
+        addHeaders(wsSan, ['Tipo de Control', 'Total', 'Costo Total']);
+        estadSanidad.por_tipo_control.forEach(r =>
+            wsSan.addRow([r.tipo, r.total, r.costo_total]));
+        wsSan.addRow([]);
+        wsSan.addRow(['Mes', 'Total Controles', 'Costo Total']);
+        estadSanidad.por_mes.forEach(r => wsSan.addRow([r.mes, r.total, r.costo_total]));
+
+        // ── Hoja 6: Distribución Animales ────────────────────────────────────
+        const wsDist = workbook.addWorksheet('Distribución Animales');
+        wsDist.addRow(['Por Raza', '']);
+        wsDist.addRow(['Raza', 'Total']);
+        distRaza.forEach(r => wsDist.addRow([r.raza, r.total]));
+        wsDist.addRow([]);
+        wsDist.addRow(['Por Etapa de Vida', '']);
+        wsDist.addRow(['Etapa', 'Total']);
+        distEtapa.forEach(r => wsDist.addRow([r.etapa, r.total]));
+        wsDist.addRow([]);
+        wsDist.addRow(['Por Estado de Salud', '']);
+        wsDist.addRow(['Estado', 'Total']);
+        distSalud.forEach(r => wsDist.addRow([r.estado, r.total]));
+
+        const buffer = await workbook.xlsx.writeBuffer();
+        return Buffer.from(buffer);
+    }
+
+    // ──────────────────────────────────────────────
+    // EXPORTACIÓN PDF
+    // ──────────────────────────────────────────────
+
+    /**
+     * Genera un PDF con pdfmake que incluye todos los KPIs de la finca.
+     */
+    async generarPdfFinca(finca_id: number, meses = 12, fincaNombre = 'Finca'): Promise<Buffer> {
+        const [
+            resumen,
+            produccionMensual,
+            topAnimales,
+            estadRep,
+            estadSanidad,
+        ] = await Promise.all([
+            this.getResumenFinca(finca_id),
+            this.getProduccionMensual(finca_id, meses),
+            this.getTopAnimalesProductores(finca_id, 10),
+            this.getEstadisticasReproduccion(finca_id, meses),
+            this.getEstadisticasSanidad(finca_id, meses),
+        ]);
+
+        const verde = '#059669';
+        const verdeLight = '#d1fae5';
+        const gris = '#64748b';
+
+        const tableHeader = (text: string) => ({
+            text, bold: true, color: '#ffffff', fillColor: verde, margin: [4, 6, 4, 6],
+        });
+        const cell = (text: string | number, shade = false, right = false) => ({
+            text: String(text ?? '—'),
+            color: '#1e293b',
+            fillColor: shade ? verdeLight : '#ffffff',
+            margin: [4, 5, 4, 5],
+            alignment: right ? 'right' : 'left',
+        });
+
+        const docDefinition: any = {
+            pageSize: 'A4',
+            pageMargins: [40, 60, 40, 60],
+            defaultStyle: { font: 'Roboto', fontSize: 9 },
+            header: {
+                columns: [
+                    { text: 'HERDIX — Sistema de Gestión Ganadera', style: 'header', margin: [40, 20, 0, 0] },
+                    { text: `Generado: ${new Date().toLocaleDateString('es')}`, alignment: 'right', color: gris, margin: [0, 20, 40, 0], fontSize: 8 },
+                ],
+            },
+            footer: (currentPage: number, pageCount: number) => ({
+                text: `Página ${currentPage} de ${pageCount}`,
+                alignment: 'center',
+                color: '#94a3b8',
+                fontSize: 8,
+                margin: [0, 10, 0, 0],
+            }),
+            content: [
+                // ── Título ────────────────────────────────────────────────────
+                {
+                    text: `Reporte de Finca: ${fincaNombre}`,
+                    style: 'title',
+                    margin: [0, 0, 0, 4],
+                },
+                {
+                    text: `Período: últimos ${meses} meses`,
+                    color: gris, fontSize: 9, margin: [0, 0, 0, 16],
+                },
+
+                // ── KPI Resumen ───────────────────────────────────────────────
+                { text: 'Resumen General', style: 'section' },
+                {
+                    columns: [
+                        {
+                            stack: [
+                                { text: `${resumen.animales.total}`, style: 'kpiValue' },
+                                { text: 'Total Animales', style: 'kpiLabel' },
+                                { text: `${resumen.animales.machos} machos / ${resumen.animales.hembras} hembras`, color: gris, fontSize: 8 },
+                            ],
+                            margin: [0, 0, 8, 12],
+                        },
+                        {
+                            stack: [
+                                { text: `${resumen.produccion_leche.litros_mes_actual.toFixed(0)} L`, style: 'kpiValue', color: '#0284c7' },
+                                { text: 'Litros este Mes', style: 'kpiLabel' },
+                                { text: 'Producción acumulada', color: gris, fontSize: 8 },
+                            ],
+                            margin: [0, 0, 8, 12],
+                        },
+                        {
+                            stack: [
+                                { text: `${resumen.reproduccion.partos_mes_actual}`, style: 'kpiValue', color: '#db2777' },
+                                { text: 'Partos este Mes', style: 'kpiLabel' },
+                                { text: `${resumen.reproduccion.proximos_partos_30_dias} próximos en 30d`, color: gris, fontSize: 8 },
+                            ],
+                            margin: [0, 0, 8, 12],
+                        },
+                        {
+                            stack: [
+                                { text: `${resumen.animales.con_alerta_sanitaria}`, style: 'kpiValue', color: '#d97706' },
+                                { text: 'Alertas Sanitarias', style: 'kpiLabel' },
+                                { text: `${resumen.animales.enfermos} enfermos`, color: gris, fontSize: 8 },
+                            ],
+                            margin: [0, 0, 0, 12],
+                        },
+                    ],
+                },
+
+                // ── Producción Mensual ────────────────────────────────────────
+                { text: 'Producción de Leche — Últimos Meses', style: 'section' },
+                {
+                    table: {
+                        headerRows: 1,
+                        widths: [80, 80, 90, 80],
+                        body: [
+                            [tableHeader('Mes'), tableHeader('Total Litros'), tableHeader('Animales Activos'), tableHeader('Promedio/día')],
+                            ...produccionMensual.map((r, i) => [
+                                cell(r.mes, i % 2 === 0),
+                                cell(r.total_litros.toFixed(1), i % 2 === 0, true),
+                                cell(r.animales_activos, i % 2 === 0, true),
+                                cell(r.promedio_diario.toFixed(2), i % 2 === 0, true),
+                            ]),
+                        ],
+                    },
+                    layout: 'noBorders',
+                    margin: [0, 0, 0, 16],
+                },
+
+                // ── Top Animales ──────────────────────────────────────────────
+                { text: 'Top 10 Animales Productores', style: 'section' },
+                {
+                    table: {
+                        headerRows: 1,
+                        widths: [90, 70, 60, 70],
+                        body: [
+                            [tableHeader('Identificador'), tableHeader('Raza'), tableHeader('Registros'), tableHeader('Total Litros')],
+                            ...topAnimales.map((r, i) => [
+                                cell(r.identificador, i % 2 === 0),
+                                cell(r.raza, i % 2 === 0),
+                                cell(r.registros, i % 2 === 0, true),
+                                cell(r.total_litros.toFixed(1), i % 2 === 0, true),
+                            ]),
+                        ],
+                    },
+                    layout: 'noBorders',
+                    margin: [0, 0, 0, 16],
+                },
+
+                // ── Reproducción ──────────────────────────────────────────────
+                { text: 'Estadísticas de Reproducción', style: 'section' },
+                {
+                    columns: [
+                        {
+                            stack: [
+                                { text: 'Partos por Mes', bold: true, color: verde, fontSize: 9, margin: [0, 0, 0, 4] },
+                                {
+                                    table: {
+                                        headerRows: 1,
+                                        widths: [55, 40, 40],
+                                        body: [
+                                            [tableHeader('Mes'), tableHeader('Partos'), tableHeader('Crías')],
+                                            ...estadRep.partos_por_mes.map((r, i) => [
+                                                cell(r.mes, i % 2 === 0),
+                                                cell(r.total_partos, i % 2 === 0, true),
+                                                cell(r.total_crias, i % 2 === 0, true),
+                                            ]),
+                                        ],
+                                    },
+                                    layout: 'noBorders',
+                                },
+                            ],
+                        },
+                        {
+                            stack: [
+                                { text: 'Tipo de Monta', bold: true, color: verde, fontSize: 9, margin: [0, 0, 0, 4] },
+                                {
+                                    table: {
+                                        headerRows: 1,
+                                        widths: [90, 40],
+                                        body: [
+                                            [tableHeader('Tipo'), tableHeader('Total')],
+                                            ...estadRep.por_tipo_monta.map((r, i) => [
+                                                cell(r.tipo_monta, i % 2 === 0),
+                                                cell(r.total, i % 2 === 0, true),
+                                            ]),
+                                        ],
+                                    },
+                                    layout: 'noBorders',
+                                },
+                                { text: `Preñeces activas: ${estadRep.prenez_activa}`, margin: [0, 8, 0, 0], bold: true, color: '#db2777', fontSize: 9 },
+                            ],
+                            margin: [8, 0, 0, 0],
+                        },
+                    ],
+                    margin: [0, 0, 0, 16],
+                },
+
+                // ── Sanidad ───────────────────────────────────────────────────
+                { text: 'Controles Sanitarios', style: 'section' },
+                {
+                    table: {
+                        headerRows: 1,
+                        widths: [160, 60, 80],
+                        body: [
+                            [tableHeader('Tipo de Control'), tableHeader('Total'), tableHeader('Costo Total')],
+                            ...estadSanidad.por_tipo_control.map((r, i) => [
+                                cell(r.tipo, i % 2 === 0),
+                                cell(r.total, i % 2 === 0, true),
+                                cell(`$${r.costo_total.toFixed(2)}`, i % 2 === 0, true),
+                            ]),
+                        ],
+                    },
+                    layout: 'noBorders',
+                    margin: [0, 0, 0, 4],
+                },
+            ],
+            styles: {
+                header: { fontSize: 10, bold: true, color: verde },
+                title: { fontSize: 16, bold: true, color: '#0f172a' },
+                section: { fontSize: 11, bold: true, color: verde, margin: [0, 12, 0, 6], decoration: 'underline' },
+                kpiValue: { fontSize: 22, bold: true, color: '#0f172a' },
+                kpiLabel: { fontSize: 8, bold: true, color: gris, margin: [0, 2, 0, 2] },
+            },
+        };
+
+        return new Promise((resolve, reject) => {
+            try {
+                const doc = (pdfMake as any).createPdf(docDefinition);
+                doc.getBuffer((buffer: Buffer) => resolve(buffer));
+            } catch (err) {
+                reject(err);
+            }
+        });
     }
 }
