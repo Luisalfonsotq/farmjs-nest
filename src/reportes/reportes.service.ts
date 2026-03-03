@@ -1,8 +1,11 @@
 // src/reportes/reportes.service.ts
 import { Injectable } from '@nestjs/common';
 import * as ExcelJS from 'exceljs';
-import * as pdfMake from 'pdfmake/build/pdfmake';
-import * as pdfFonts from 'pdfmake/build/vfs_fonts';
+// pdfmake: usamos PdfPrinter (API Node.js) — require para evitar problemas de tipos
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const PdfPrinter = require('pdfmake') as any;
+
+
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, IsNull, Not } from 'typeorm';
 
@@ -34,9 +37,20 @@ export class ReportesService {
         @InjectRepository(Cria)
         private criaRepo: Repository<Cria>,
     ) {
-        // Inicializar pdfmake con las fuentes incluidas
-        (pdfMake as any).vfs = (pdfFonts as any).pdfMake?.vfs ?? (pdfFonts as any).vfs ?? {};
+        // Cargar fuentes Roboto desde el VFS de pdfmake (base64 → Buffer)
+        const vfsFontsModule = require('pdfmake/build/vfs_fonts');
+        const vfs = vfsFontsModule?.pdfMake?.vfs ?? vfsFontsModule?.vfs ?? {};
+        this.pdfPrinter = new PdfPrinter({
+            Roboto: {
+                normal: Buffer.from(vfs['Roboto-Regular.ttf'] ?? '', 'base64'),
+                bold: Buffer.from(vfs['Roboto-Medium.ttf'] ?? '', 'base64'),
+                italics: Buffer.from(vfs['Roboto-Italic.ttf'] ?? '', 'base64'),
+                bolditalics: Buffer.from(vfs['Roboto-MediumItalic.ttf'] ?? '', 'base64'),
+            },
+        });
     }
+
+    private readonly pdfPrinter: any;
 
     // ──────────────────────────────────────────────
     // KPI RESUMEN GENERAL DE UNA FINCA
@@ -785,8 +799,12 @@ export class ReportesService {
 
         return new Promise((resolve, reject) => {
             try {
-                const doc = (pdfMake as any).createPdf(docDefinition);
-                doc.getBuffer((buffer: Buffer) => resolve(buffer));
+                const pdfDoc = this.pdfPrinter.createPdfKitDocument(docDefinition);
+                const chunks: Buffer[] = [];
+                pdfDoc.on('data', (chunk: Buffer) => chunks.push(chunk));
+                pdfDoc.on('end', () => resolve(Buffer.concat(chunks)));
+                pdfDoc.on('error', (err: Error) => reject(err));
+                pdfDoc.end();
             } catch (err) {
                 reject(err);
             }
