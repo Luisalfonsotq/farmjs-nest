@@ -20,6 +20,7 @@ import { EventoAnimalModule } from './evento-animal/evento-animal.module';
 import { InvitacionModule } from './invitacion/invitacion.module';
 import { ProduccionLecheModule } from './produccion-leche/produccion-leche.module';
 import { ReportesModule } from './reportes/reportes.module';
+import { TareaModule } from './tarea/tarea.module';
 
 // Importa entidades
 import { Usuario } from './usuario/entities/usuario.entity';
@@ -36,6 +37,7 @@ import { TipoEventoAnimal } from './tipo-evento-animal/entities/tipo-evento-anim
 import { EventoAnimal } from './evento-animal/entities/evento-animal.entity';
 import { Invitacion } from './invitacion/entities/invitacion.entity';
 import { ProduccionLeche } from './produccion-leche/entities/produccion-leche.entity';
+import { Tarea } from './tarea/entities/tarea.entity';
 
 
 // Función de ayuda para obtener variables de entorno
@@ -76,6 +78,7 @@ function getEnv(key: string): string {
         EventoAnimal,
         Invitacion,
         ProduccionLeche,
+        Tarea,
       ],
       synchronize: false, // Cuando está en false, se conecta a la base de datos pero no crean ni modifican ninguna tabla
       // process.env.NODE_ENV !== 'production',
@@ -97,6 +100,7 @@ function getEnv(key: string): string {
     InvitacionModule,
     ProduccionLecheModule,
     ReportesModule,
+    TareaModule,
   ],
   controllers: [],
   providers: [],
