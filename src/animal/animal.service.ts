@@ -22,14 +22,14 @@ export class AnimalService {
     @InjectRepository(Proveedor)
     private proveedor_repository: Repository<Proveedor>,
     private animal_schedule_service: AnimalScheduleService,
-  ) {}
+  ) { }
 
   async crear(create_animal_dto: CreateAnimalDto): Promise<Animal> {
     const { finca_id, potrero_id, proveedor_id, ...animal_data } = create_animal_dto;
 
     // Verificar si el identificador_unico ya existe
-    const animal_existente = await this.animal_repository.findOne({ 
-      where: { identificador_unico: animal_data.identificador_unico } 
+    const animal_existente = await this.animal_repository.findOne({
+      where: { identificador_unico: animal_data.identificador_unico }
     });
 
     if (animal_existente) {
@@ -140,8 +140,8 @@ export class AnimalService {
         animal.proveedor = null;
         animal.proveedor_id = null;
       } else if (update_animal_dto.proveedor_id !== animal.proveedor_id) {
-        const nuevo_proveedor = await this.proveedor_repository.findOne({ 
-          where: { id: update_animal_dto.proveedor_id } 
+        const nuevo_proveedor = await this.proveedor_repository.findOne({
+          where: { id: update_animal_dto.proveedor_id }
         });
         if (!nuevo_proveedor) throw new NotFoundException(`Proveedor con ID ${update_animal_dto.proveedor_id} no encontrado.`);
         animal.proveedor = nuevo_proveedor;
@@ -179,10 +179,36 @@ export class AnimalService {
     if (!finca) {
       throw new NotFoundException(`Finca con ID ${finca_id} no encontrada.`);
     }
-    return this.animal_repository.find({
+    const animales = await this.animal_repository.find({
       where: { finca: { id: finca_id } },
-      relations: ['finca', 'potrero', 'proveedor'],
+      relations: ['finca', 'potrero', 'proveedor', 'controles_sanitarios'],
     });
+
+    const dias_limite = 90;
+    const hoy = new Date();
+
+    for (const animal of animales) {
+      let requiere_atencion = true;
+      if (animal.controles_sanitarios && animal.controles_sanitarios.length > 0) {
+        const ultima_fecha = animal.controles_sanitarios
+          .map(c => new Date(c.fecha))
+          .sort((a, b) => b.getTime() - a.getTime())[0];
+
+        const diff = hoy.getTime() - ultima_fecha.getTime();
+        const dias_desde = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+        if (dias_desde <= dias_limite) {
+          requiere_atencion = false;
+        }
+      }
+
+      if (animal.requiere_atencion_sanitaria !== requiere_atencion) {
+        animal.requiere_atencion_sanitaria = requiere_atencion;
+        this.animal_repository.save(animal).catch(() => { });
+      }
+    }
+
+    return animales;
   }
 
   async obtener_animales_por_potrero(potrero_id: number): Promise<Animal[]> {
@@ -199,30 +225,61 @@ export class AnimalService {
   // Nuevos métodos para reportes y alertas
 
   async obtener_animales_con_alertas_sanitarias(finca_id?: number): Promise<Animal[]> {
-    const where: any = { 
-      requiere_atencion_sanitaria: true,
+    const where: any = {
       eliminado_en: IsNull()
     };
-    
+
     if (finca_id) {
       where.finca = { id: finca_id };
     }
 
-    return this.animal_repository.find({
+    const animales = await this.animal_repository.find({
       where,
-      relations: ['finca', 'potrero'],
+      relations: ['finca', 'potrero', 'controles_sanitarios'],
     });
+
+    const dias_limite = 90;
+    const hoy = new Date();
+    const animales_con_alertas: Animal[] = [];
+
+    for (const animal of animales) {
+      let requiere_atencion = true;
+      if (animal.controles_sanitarios && animal.controles_sanitarios.length > 0) {
+        const ultima_fecha = animal.controles_sanitarios
+          .map(c => new Date(c.fecha))
+          .sort((a, b) => b.getTime() - a.getTime())[0];
+
+        const diff = hoy.getTime() - ultima_fecha.getTime();
+        const dias_desde = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+        if (dias_desde <= dias_limite) {
+          requiere_atencion = false;
+        }
+      }
+
+      if (requiere_atencion) {
+        animales_con_alertas.push(animal);
+      }
+
+      // Sincronizar con DB temporalmente sin bloquear
+      if (animal.requiere_atencion_sanitaria !== requiere_atencion) {
+        animal.requiere_atencion_sanitaria = requiere_atencion;
+        this.animal_repository.save(animal).catch(() => { });
+      }
+    }
+
+    return animales_con_alertas;
   }
 
   async obtener_animales_proximos_a_parir(dias_antes: number = 30, finca_id?: number): Promise<Animal[]> {
     const fecha_limite = new Date();
     fecha_limite.setDate(fecha_limite.getDate() + dias_antes);
 
-    const where: any = { 
+    const where: any = {
       fecha_probable_parto: Not(IsNull()),
       eliminado_en: IsNull()
     };
-    
+
     if (finca_id) {
       where.finca = { id: finca_id };
     }
@@ -232,8 +289,8 @@ export class AnimalService {
       relations: ['finca', 'potrero'],
     });
 
-    return animales.filter(animal => 
-      animal.fecha_probable_parto && 
+    return animales.filter(animal =>
+      animal.fecha_probable_parto &&
       animal.fecha_probable_parto <= fecha_limite &&
       animal.fecha_probable_parto >= new Date()
     );
@@ -243,7 +300,7 @@ export class AnimalService {
     const where: any = {
       eliminado_en: IsNull()
     };
-    
+
     if (finca_id) {
       where.finca = { id: finca_id };
     }
