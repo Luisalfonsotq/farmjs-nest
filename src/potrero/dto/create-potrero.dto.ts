@@ -1,6 +1,7 @@
 // src/potrero/dto/create-potrero.dto.ts
 import { Type } from 'class-transformer';
-import { IsString, IsNumber, IsNotEmpty, Min, Max, IsOptional, IsDateString } from 'class-validator';
+import { IsString, IsNumber, IsNotEmpty, Min, Max, IsOptional, IsDateString, IsEnum, IsInt } from 'class-validator';
+import { EstadoPasto } from '../entities/potrero.entity';
 
 export class CreatePotreroDto {
   @IsNotEmpty()
@@ -15,6 +16,16 @@ export class CreatePotreroDto {
   @IsOptional()
   @IsString()
   tipo_pasto?: string;
+
+  @IsOptional()
+  @IsEnum(EstadoPasto)
+  estado_pasto?: EstadoPasto;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Type(() => Number)
+  capacidad_animales?: number;
 
   @IsOptional()
   @IsNumber()

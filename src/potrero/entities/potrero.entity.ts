@@ -4,6 +4,12 @@ import { Finca } from '../../finca/entities/finca.entity';
 import { Animal } from '../../animal/entities/animal.entity';
 import { EventoAnimal } from 'src/evento-animal/entities/evento-animal.entity';
 
+export enum EstadoPasto {
+  BUENO = 'bueno',
+  REGULAR = 'regular',
+  AGOTADO = 'agotado',
+}
+
 @Entity('Potreros')
 export class Potrero {
   @PrimaryGeneratedColumn()
@@ -17,6 +23,12 @@ export class Potrero {
 
   @Column({ type: 'varchar', length: 100, nullable: true })
   tipo_pasto: string;
+
+  @Column({ type: 'enum', enum: EstadoPasto, default: EstadoPasto.BUENO })
+  estado_pasto: EstadoPasto;
+
+  @Column({ type: 'int', nullable: true, comment: 'Capacidad máxima de animales recomendada' })
+  capacidad_animales: number | null;
 
   @Column({
     type: 'decimal',
