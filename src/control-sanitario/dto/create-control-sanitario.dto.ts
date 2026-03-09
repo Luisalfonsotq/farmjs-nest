@@ -1,14 +1,28 @@
 // src/control-sanitario/dto/create-control-sanitario.dto.ts
-import { IsNotEmpty, IsNumber, IsDateString, IsOptional, IsString, IsDecimal } from 'class-validator';
+import {
+  IsNotEmpty, IsNumber, IsDateString, IsOptional, IsString
+} from 'class-validator';
 
 export class CreateControlSanitarioDto {
   @IsNotEmpty()
   @IsNumber()
   animal_id: number;
 
+  /**
+   * Nombre del control sanitario, proveniente de controlesSanitariosBase (frontend).
+   * Ej: "Vacunación Fiebre Aftosa (FMD)", "Control de Garrapatas (Rhipicephalus)"
+   */
   @IsNotEmpty()
-  @IsNumber()
-  tipo_control_id: number;
+  @IsString()
+  nombre_control: string;
+
+  /**
+   * Categoría del control (Vacunación, Control de parásitos, Reproductivo, etc.)
+   * Proviene de controlesSanitariosBase.categoria en el frontend.
+   */
+  @IsOptional()
+  @IsString()
+  categoria_control?: string | null;
 
   @IsOptional()
   @IsNumber()
@@ -20,21 +34,21 @@ export class CreateControlSanitarioDto {
 
   @IsOptional()
   @IsString()
-  medicamento?: string;
+  medicamento?: string | null;
 
   @IsOptional()
-  @IsDecimal()
-  dosis?: number;
-
-  @IsOptional()
-  @IsString()
-  via_aplicacion?: string;
+  @IsNumber()
+  dosis?: number | null;
 
   @IsOptional()
   @IsString()
-  observaciones?: string;
+  via_aplicacion?: string | null;
 
   @IsOptional()
-  @IsDecimal()
-  costo?: number;
+  @IsString()
+  observaciones?: string | null;
+
+  @IsOptional()
+  @IsNumber()
+  costo?: number | null;
 }

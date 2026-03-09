@@ -4,14 +4,13 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 
-// Importa tus módulos
+// Módulos
 import { UsuarioModule } from './usuario/usuario.module';
 import { FincaModule } from './finca/finca.module';
 import { AuthModule } from './auth/auth.module';
 import { PotreroModule } from './potrero/potrero.module';
 import { AnimalModule } from './animal/animal.module';
 import { ProveedorModule } from './proveedor/proveedor.module';
-import { TipoControlSanitarioModule } from './tipo-control-sanitario/tipo-control-sanitario.module';
 import { ControlSanitarioModule } from './control-sanitario/control-sanitario.module';
 import { ReproduccionModule } from './reproduccion/reproduccion.module';
 import { CriaModule } from './cria/cria.module';
@@ -22,14 +21,13 @@ import { ProduccionLecheModule } from './produccion-leche/produccion-leche.modul
 import { ReportesModule } from './reportes/reportes.module';
 import { TareaModule } from './tarea/tarea.module';
 
-// Importa entidades
+// Entidades
 import { Usuario } from './usuario/entities/usuario.entity';
 import { Finca } from './finca/entities/finca.entity';
 import { UsuarioFinca } from './finca/entities/usuario-finca.entity';
 import { Potrero } from './potrero/entities/potrero.entity';
 import { Animal } from './animal/entities/animal.entity';
 import { Proveedor } from './proveedor/entities/proveedor.entity';
-import { TipoControlSanitario } from './tipo-control-sanitario/entities/tipo-control-sanitario.entity';
 import { ControlSanitario } from './control-sanitario/entities/control-sanitario.entity';
 import { Reproduccion } from './reproduccion/entities/reproduccion.entity';
 import { Cria } from './cria/entities/cria.entity';
@@ -70,7 +68,6 @@ function getEnv(key: string): string {
         Potrero,
         Animal,
         Proveedor,
-        TipoControlSanitario,
         ControlSanitario,
         Reproduccion,
         Cria,
@@ -91,7 +88,6 @@ function getEnv(key: string): string {
     PotreroModule,
     AnimalModule,
     ProveedorModule,
-    TipoControlSanitarioModule,
     ControlSanitarioModule,
     ReproduccionModule,
     CriaModule,

@@ -8,7 +8,6 @@ import { Animal } from '../animal/entities/animal.entity';
 import { ProduccionLeche } from '../produccion-leche/entities/produccion-leche.entity';
 import { Reproduccion } from '../reproduccion/entities/reproduccion.entity';
 import { ControlSanitario } from '../control-sanitario/entities/control-sanitario.entity';
-import { TipoControlSanitario } from '../tipo-control-sanitario/entities/tipo-control-sanitario.entity';
 import { EventoAnimal } from '../evento-animal/entities/evento-animal.entity';
 import { TipoEventoAnimal } from '../tipo-evento-animal/entities/tipo-evento-animal.entity';
 import { Cria } from '../cria/entities/cria.entity';
@@ -22,7 +21,6 @@ import { UsuarioFinca } from '../finca/entities/usuario-finca.entity';
             ProduccionLeche,
             Reproduccion,
             ControlSanitario,
-            TipoControlSanitario,
             EventoAnimal,
             TipoEventoAnimal,
             Cria,

@@ -274,13 +274,12 @@ export class ReportesService {
 
     /** Controles sanitarios por tipo y costo acumulado */
     async getEstadisticasSanidad(finca_id: number, meses = 12) {
-        // Por tipo de control
+        // Por tipo/nombre de control
         const porTipo = await this.controlSanitarioRepo
             .createQueryBuilder('cs')
             .innerJoin('cs.animal', 'a')
-            .innerJoin('cs.tipo_control', 'tc')
             .select([
-                'tc.nombre AS tipo',
+                'cs.nombre_control AS tipo',
                 'COUNT(cs.id) AS total',
                 'SUM(cs.costo) AS costo_total',
             ])
@@ -289,7 +288,7 @@ export class ReportesService {
                 `cs.fecha >= DATE_SUB(CURDATE(), INTERVAL :meses MONTH)`,
                 { meses },
             )
-            .groupBy('tc.nombre')
+            .groupBy('cs.nombre_control')
             .orderBy('total', 'DESC')
             .getRawMany();
 
