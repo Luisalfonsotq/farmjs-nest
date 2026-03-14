@@ -1,8 +1,9 @@
-// src/app.module.ts
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { APP_INTERCEPTOR } from '@nestjs/core';
+
 
 // Módulos
 import { UsuarioModule } from './usuario/usuario.module';
@@ -20,6 +21,7 @@ import { InvitacionModule } from './invitacion/invitacion.module';
 import { ProduccionLecheModule } from './produccion-leche/produccion-leche.module';
 import { ReportesModule } from './reportes/reportes.module';
 import { TareaModule } from './tarea/tarea.module';
+import { AuditoriaModule } from './auditoria/auditoria.module';
 
 // Entidades
 import { Usuario } from './usuario/entities/usuario.entity';
@@ -36,9 +38,10 @@ import { EventoAnimal } from './evento-animal/entities/evento-animal.entity';
 import { Invitacion } from './invitacion/entities/invitacion.entity';
 import { ProduccionLeche } from './produccion-leche/entities/produccion-leche.entity';
 import { Tarea } from './tarea/entities/tarea.entity';
+import { Auditoria } from './auditoria/entities/auditoria.entity';
 
+import { AuditoriaInterceptor } from './auditoria/interceptors/auditoria.interceptor';
 
-// Función de ayuda para obtener variables de entorno
 function getEnv(key: string): string {
   const value = process.env[key];
   if (value === undefined) {
@@ -76,11 +79,10 @@ function getEnv(key: string): string {
         Invitacion,
         ProduccionLeche,
         Tarea,
+        Auditoria,
       ],
-      synchronize: false, // Cuando está en false, se conecta a la base de datos pero no crean ni modifican ninguna tabla
-      // process.env.NODE_ENV !== 'production',
+      synchronize: false, // Permite sincronizar la DB
       logging: process.env.NODE_ENV !== 'production',
-      // softDelete: true, // Descomenta si habilitas soft delete globalmente
     }),
     AuthModule,
     UsuarioModule,
@@ -97,8 +99,14 @@ function getEnv(key: string): string {
     ProduccionLecheModule,
     ReportesModule,
     TareaModule,
+    AuditoriaModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: AuditoriaInterceptor,
+    },
+  ],
 })
 export class AppModule { }
