@@ -115,8 +115,8 @@ export class TareaService {
     async iniciar_tarea(id: number, colaborador_id: number): Promise<Tarea> {
         const tarea = await this.obtener_por_id(id);
 
-        if (tarea.asignado_a_id !== colaborador_id) {
-            throw new ForbiddenException('Solo puedes iniciar tareas asignadas a ti');
+        if (Number(tarea.asignado_a_id) !== Number(colaborador_id)) {
+            throw new ForbiddenException(`Solo puedes iniciar tareas asignadas a ti (Asignado a: ${tarea.asignado_a_id}, Tu ID: ${colaborador_id})`);
         }
         if (tarea.estado !== EstadoTarea.PENDIENTE) {
             throw new ForbiddenException(`No puedes iniciar una tarea en estado: ${tarea.estado}`);
@@ -135,8 +135,8 @@ export class TareaService {
     ): Promise<Tarea> {
         const tarea = await this.obtener_por_id(id);
 
-        if (tarea.asignado_a_id !== colaborador_id) {
-            throw new ForbiddenException('Solo puedes completar tareas asignadas a ti');
+        if (Number(tarea.asignado_a_id) !== Number(colaborador_id)) {
+            throw new ForbiddenException(`Solo puedes completar tareas asignadas a ti (Asignado a: ${tarea.asignado_a_id}, Tu ID: ${colaborador_id})`);
         }
         if (
             tarea.estado === EstadoTarea.CANCELADA ||

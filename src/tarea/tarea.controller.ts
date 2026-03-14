@@ -119,7 +119,7 @@ export class TareaController {
     @Patch(':id/iniciar')
     @Roles(RolUsuario.COLABORADOR)
     async iniciar_tarea(@Param('id') id: string, @Request() req: any) {
-        return this.tareaService.iniciar_tarea(+id, req.user.userId);
+        return this.tareaService.iniciar_tarea(+id, req.user.id);
     }
 
     // ─── COMPLETAR TAREA (Colaborador: marca su propia tarea como completada) ─────
@@ -127,7 +127,7 @@ export class TareaController {
     @Patch(':id/completar')
     @Roles(RolUsuario.COLABORADOR)
     async completar(@Param('id') id: string, @Request() req: any, @Body() dto: CompletarTareaDto) {
-        return this.tareaService.completar_por_colaborador(+id, req.user.userId, dto);
+        return this.tareaService.completar_por_colaborador(+id, req.user.id, dto);
     }
 
     // ─── REPORTAR PROBLEMA (Colaborador: sube foto y descripción) ─────────────────
@@ -139,7 +139,7 @@ export class TareaController {
         @Request() req: any,
         @Body() dto: ReportarProblemaTareaDto,
     ) {
-        return this.tareaService.reportar_problema(+id, req.user.userId, dto);
+        return this.tareaService.reportar_problema(+id, req.user.id, dto);
     }
 
     // ─── ELIMINAR TAREA (solo Admin) ──────────────────────────────────────────────
