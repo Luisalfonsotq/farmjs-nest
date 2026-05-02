@@ -42,6 +42,15 @@ if (process.env.NODE_ENV !== 'production') {
 
 // Exportamos el handler para Vercel (Serverless Function)
 export default async function handler(req: any, res: any) {
-  const server = await bootstrap();
-  server(req, res);
+  try {
+    const server = await bootstrap();
+    server(req, res);
+  } catch (error: any) {
+    console.error('❌ Error fatal durante el arranque (bootstrap):', error);
+    res.status(500).json({
+      message: 'Internal Server Error during startup',
+      error: error.message,
+      stack: error.stack,
+    });
+  }
 }
