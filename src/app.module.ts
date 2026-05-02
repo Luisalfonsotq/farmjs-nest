@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 
@@ -57,37 +57,50 @@ function getEnv(key: string): string {
       isGlobal: true,
       envFilePath: '.env',
     }),
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      url: process.env.DATABASE_URL,
-      host: getEnv('DATABASE_HOST'),
-      port: parseInt(getEnv('DATABASE_PORT') || '3306', 10),
-      username: getEnv('DATABASE_USER'),
-      password: getEnv('DATABASE_PASSWORD'),
-      database: getEnv('DATABASE_NAME'),
-      entities: [
-        Usuario,
-        Finca,
-        UsuarioFinca,
-        Potrero,
-        Animal,
-        Proveedor,
-        ControlSanitario,
-        Reproduccion,
-        Cria,
-        TipoEventoAnimal,
-        EventoAnimal,
-        Invitacion,
-        ProduccionLeche,
-        Tarea,
-        Auditoria,
-      ],
-      synchronize: false, // Permite sincronizar la DB
-      logging: process.env.NODE_ENV !== 'production',
-      extra: {
-        ssl: {
-          rejectUnauthorized: false
-        }
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => {
+        const dbUrl = configService.get<string>('DATABASE_URL');
+        
+        return {
+          type: 'mysql',
+          // Si existe DATABASE_URL la usamos, sino usamos los datos separados
+          ...(dbUrl ? { url: dbUrl } : {
+            host: configService.get<string>('DATABASE_HOST'),
+            port: configService.get<number>('DATABASE_PORT') || 3306,
+            username: configService.get<string>('DATABASE_USER'),
+            password: configService.get<string>('DATABASE_PASSWORD'),
+            database: configService.get<string>('DATABASE_NAME'),
+          }),
+          entities: [
+            Usuario,
+            Finca,
+            UsuarioFinca,
+            Potrero,
+            Animal,
+            Proveedor,
+            ControlSanitario,
+            Reproduccion,
+            Cria,
+            TipoEventoAnimal,
+            EventoAnimal,
+            Invitacion,
+            ProduccionLeche,
+            Tarea,
+            Auditoria,
+          ],
+          synchronize: false,
+          logging: configService.get<string>('NODE_ENV') !== 'production',
+          extra: {
+            // Límite bajo de conexiones por instancia. Vital para Vercel (Serverless) 
+            // ya que levanta múltiples instancias y puede saturar Aiven rápidamente.
+            connectionLimit: 2, 
+            ssl: {
+              rejectUnauthorized: false
+            }
+          }
+        };
       }
     }),
     AuthModule,
