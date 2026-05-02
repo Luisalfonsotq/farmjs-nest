@@ -1,7 +1,7 @@
 // api/serverless.ts
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../src/app.module';
-import * as cookieParser from 'cookie-parser';
+const cookieParser = require('cookie-parser');
 
 let cachedServer: any;
 
