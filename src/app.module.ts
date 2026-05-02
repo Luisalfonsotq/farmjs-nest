@@ -96,6 +96,7 @@ function getEnv(key: string): string {
             // Límite bajo de conexiones por instancia. Vital para Vercel (Serverless) 
             // ya que levanta múltiples instancias y puede saturar Aiven rápidamente.
             connectionLimit: 2, 
+            connectTimeout: 5000, // Falla a los 5 segundos si no logra conectar
             ssl: {
               rejectUnauthorized: false
             }

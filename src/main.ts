@@ -15,7 +15,9 @@ async function bootstrap() {
 
     app.use(cookieParser());
 
+    console.log('⏳ Llamando a app.init()...');
     await app.init();
+    console.log('✅ app.init() finalizado con éxito.');
     cachedServer = app.getHttpAdapter().getInstance();
   }
   return cachedServer;
