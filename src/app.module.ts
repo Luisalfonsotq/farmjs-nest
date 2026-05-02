@@ -5,6 +5,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { APP_INTERCEPTOR } from '@nestjs/core';
 import { envValidationSchema } from './common/config/env.validation';
+import { AppController } from './app.controller';
+import { AppService } from './app.service';
 
 // Módulos
 import { UsuarioModule } from './usuario/usuario.module';
@@ -121,8 +123,9 @@ function getEnv(key: string): string {
     TareaModule,
     AuditoriaModule,
   ],
-  controllers: [],
+  controllers: [AppController],
   providers: [
+    AppService,
     {
       provide: APP_INTERCEPTOR,
       useClass: AuditoriaInterceptor,
