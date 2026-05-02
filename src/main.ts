@@ -23,9 +23,9 @@ async function bootstrap() {
   return cachedServer;
 }
 
-// En Vercel, NODE_ENV se define como 'production' en vercel.json.
+// Vercel inyecta automáticamente la variable de entorno VERCEL="1".
 // Por lo tanto, esto solo se ejecutará en tu máquina local.
-if (process.env.NODE_ENV !== 'production') {
+if (!process.env.VERCEL) {
   async function startLocal() {
     const app = await NestFactory.create(AppModule);
     app.enableCors({
