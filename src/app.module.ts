@@ -59,6 +59,7 @@ function getEnv(key: string): string {
     }),
     TypeOrmModule.forRoot({
       type: 'mysql',
+      url: process.env.DATABASE_URL,
       host: getEnv('DATABASE_HOST'),
       port: parseInt(getEnv('DATABASE_PORT') || '3306', 10),
       username: getEnv('DATABASE_USER'),
@@ -83,6 +84,11 @@ function getEnv(key: string): string {
       ],
       synchronize: false, // Permite sincronizar la DB
       logging: process.env.NODE_ENV !== 'production',
+      extra: {
+        ssl: {
+          rejectUnauthorized: false
+        }
+      }
     }),
     AuthModule,
     UsuarioModule,
