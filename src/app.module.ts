@@ -1,9 +1,10 @@
+// src/app.module.ts
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
 import { APP_INTERCEPTOR } from '@nestjs/core';
-
+import { envValidationSchema } from './common/config/env.validation';
 
 // Módulos
 import { UsuarioModule } from './usuario/usuario.module';
@@ -55,6 +56,7 @@ function getEnv(key: string): string {
     ScheduleModule.forRoot(),
     ConfigModule.forRoot({
       isGlobal: true,
+      validationSchema: envValidationSchema,
       envFilePath: '.env',
     }),
     TypeOrmModule.forRootAsync({
@@ -62,17 +64,15 @@ function getEnv(key: string): string {
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         const dbUrl = configService.get<string>('DATABASE_URL');
-        
+
         return {
           type: 'mysql',
-          // Si existe DATABASE_URL la usamos, sino usamos los datos separados
-          ...(dbUrl ? { url: dbUrl } : {
-            host: configService.get<string>('DATABASE_HOST'),
-            port: configService.get<number>('DATABASE_PORT') || 3306,
-            username: configService.get<string>('DATABASE_USER'),
-            password: configService.get<string>('DATABASE_PASSWORD'),
-            database: configService.get<string>('DATABASE_NAME'),
-          }),
+          host: configService.get<string>('DB_HOST'),
+          port: configService.get<number>('DB_PORT') || 3306,
+          username: configService.get<string>('DB_USERNAME'),
+          password: configService.get<string>('DB_PASSWORD'),
+          database: configService.get<string>('DB_DATABASE'),
+
           entities: [
             Usuario,
             Finca,
@@ -95,7 +95,7 @@ function getEnv(key: string): string {
           extra: {
             // Límite bajo de conexiones por instancia. Vital para Vercel (Serverless) 
             // ya que levanta múltiples instancias y puede saturar Aiven rápidamente.
-            connectionLimit: 2, 
+            connectionLimit: 2,
             connectTimeout: 5000, // Falla a los 5 segundos si no logra conectar
             ssl: {
               rejectUnauthorized: false
