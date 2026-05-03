@@ -65,8 +65,9 @@ function getEnv(key: string): string {
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
-        const dbUrl = configService.get<string>('DATABASE_URL');
+        //const dbUrl = configService.get<string>('DATABASE_URL');
 
+        const isProduction = configService.get<string>('NODE_ENV') === 'production';
         return {
           type: 'mysql',
           host: configService.get<string>('DB_HOST'),
@@ -92,16 +93,18 @@ function getEnv(key: string): string {
             Tarea,
             Auditoria,
           ],
-          synchronize: false,
-          logging: configService.get<string>('NODE_ENV') !== 'production',
+          synchronize: false, // En production debe ser false
+          logging: !isProduction,
           extra: {
             // Límite bajo de conexiones por instancia. Vital para Vercel (Serverless) 
             // ya que levanta múltiples instancias y puede saturar Aiven rápidamente.
-            connectionLimit: 2,
+            connectionLimit: isProduction ? 2 : 10,
             connectTimeout: 5000, // Falla a los 5 segundos si no logra conectar
-            ssl: {
-              rejectUnauthorized: false
-            }
+            ...(isProduction && {
+              ssl: {
+                rejectUnauthorized: false
+              }
+            })
           }
         };
       }

@@ -4,9 +4,9 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { FincaService } from './finca.service';
 import { FincaController } from './finca.controller';
 import { Finca } from './entities/finca.entity';
-import { Potrero } from 'src/potrero/entities/potrero.entity';
+import { Potrero } from '../potrero/entities/potrero.entity';
 // import {Animal}
-import { Usuario } from 'src/usuario/entities/usuario.entity';
+import { Usuario } from '../usuario/entities/usuario.entity';
 import { UsuarioFinca } from './entities/usuario-finca.entity';
 
 @Module({

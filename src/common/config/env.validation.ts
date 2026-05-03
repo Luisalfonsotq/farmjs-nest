@@ -1,3 +1,4 @@
+// src/common/config/env.validation.ts
 import * as Joi from 'joi';
 
 export const envValidationSchema = Joi.object({
@@ -6,7 +7,7 @@ export const envValidationSchema = Joi.object({
         .valid('development', 'production', 'test')
         .default('development'),
     PORT: Joi.number().default(3001),
-    VERCEL: Joi.number().default(0),
+    //VERCEL: Joi.number().default(0),
 
     // Base de Datos (Separadas como sugeriste)
     DB_HOST: Joi.string().required(),

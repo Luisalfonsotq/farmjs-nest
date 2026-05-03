@@ -2,7 +2,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, JoinColumn, OneToMany, DeleteDateColumn } from 'typeorm';
 import { Finca } from '../../finca/entities/finca.entity';
 import { Animal } from '../../animal/entities/animal.entity';
-import { EventoAnimal } from 'src/evento-animal/entities/evento-animal.entity';
+import { EventoAnimal } from '../../evento-animal/entities/evento-animal.entity';
 
 export enum EstadoPasto {
   BUENO = 'bueno',

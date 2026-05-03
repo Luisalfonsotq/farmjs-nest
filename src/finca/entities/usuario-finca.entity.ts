@@ -1,6 +1,6 @@
 // src/finca/entities/usuario-finca.entity.ts
 import { Entity, PrimaryColumn, ManyToOne, JoinColumn, CreateDateColumn, UpdateDateColumn } from "typeorm";
-import { Usuario } from "src/usuario/entities/usuario.entity";
+import { Usuario } from "../../usuario/entities/usuario.entity";
 import { Finca } from "./finca.entity";
 
 @Entity('UsuarioFinca')
